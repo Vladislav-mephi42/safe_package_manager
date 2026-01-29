@@ -1,0 +1,56 @@
+name: Build and Test C++ Project
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ cmake
+
+    - name: Verify .clangd config exists (optional)
+      run: |
+        if [ ! -f .clangd ]; then
+          echo "Warning: .clangd configuration file not found in project root."
+          echo "This is OK if you don't use clangd, but consider adding it for IDE support."
+        else
+          echo ".clangd found:"
+          cat .clangd
+        fi
+
+    - name: Install Catch2 via vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+        ./vcpkg/vcpkg install catch2 --triplet x64-linux
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure CMake
+      working-directory: build
+      run: |
+        cmake .. \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build project
+      working-directory: build
+      run: make -j2
+
+    - name: Run unit tests
+      working-directory: build
+      run: |
+        ./main_test
+        ./map_tests
