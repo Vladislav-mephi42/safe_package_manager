@@ -22,7 +22,7 @@ std::ostream &Main_package::write(std::ostream &out) {
   out << current_version << "\n";
   out << last_version << "\n";
   out << req_packages.size() << "\n";
-  for (std::shared_ptr<Package> package : req_packages) {
+  for (const std::shared_ptr<Package> &package : req_packages) {
     package->write(out);
   }
   return out;

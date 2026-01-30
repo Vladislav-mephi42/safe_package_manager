@@ -21,7 +21,7 @@ std::ostream &Support_package::write(std::ostream &out) {
   out << current_version << "\n";
   out << last_version << "\n";
   out << req_packages.size() << "\n";
-  for (std::shared_ptr<Package> package : req_packages) {
+  for (const std::shared_ptr<Package> &package : req_packages) {
     package->write(out);
   }
   return out;
@@ -159,15 +159,15 @@ std::string get_connected_name(const std::vector<std::string> &filenames) {
 std::shared_ptr<Package>
 Support_package::connect(std::vector<std::shared_ptr<Package>> packages) {
   std::vector<std::string> file_names;
-  for (auto &el : packages) {
-    file_names.push_back(el->get_file_name());
+  for (const auto &el : packages) {
+    file_names.emplace_back(el->get_file_name());
   }
 
   std::string new_name = get_connected_name(file_names);
   std::shared_ptr<Package> result = packages[0]->clone();
   result->set_file_name(new_name);
   for (auto &el : packages) {
-    for (auto req : el->get_connected_packages()) {
+    for (const auto &req : el->get_connected_packages()) {
       el->insert_connected(req);
     }
   }

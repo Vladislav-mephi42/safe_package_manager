@@ -22,22 +22,21 @@ void Package_manager::add(std::shared_ptr<Package> new_package,
   }
   connect_equal_pointers(new_package);
   cycle_check(new_package);
-
   new_package->add();
-
   new_package->set_using_flag(main_flag);
-
   map.emplace(new_package->get_file_name(), new_package);
-  for (std::shared_ptr<Package> req : new_package->get_connected_packages()) {
+  for (const std::shared_ptr<Package> &req :
+       new_package->get_connected_packages()) {
     add(req, false);
   }
 }
 
-void Package_manager::connect_equal_pointers(std::shared_ptr<Package> package) {
+void Package_manager::connect_equal_pointers(
+    const std::shared_ptr<Package> &package) {
   cycle_check(package);
 
   auto req_packages = package->get_connected_packages();
-  for (std::shared_ptr<Package> req_package_ptr : req_packages) {
+  for (const std::shared_ptr<Package> &req_package_ptr : req_packages) {
     auto map_it =
         std::ranges::find_if(map, [req_package_ptr](const auto &map_value) {
           return (*(map_value.second)) == (*req_package_ptr);
@@ -75,13 +74,13 @@ void DFS_visit(
   time_stamp[name].second = ++time;
 }
 
-void Package_manager::cycle_check(const std::shared_ptr<Package> package) {
+void Package_manager::cycle_check(const std::shared_ptr<Package> &package) {
   std::vector<std::shared_ptr<Package>> Adj_u =
       package->get_connected_packages();
   std::unordered_map<std::string, Colour> colour;
   std::unordered_map<std::string, std::shared_ptr<Package>> pred;
   std::unordered_map<std::string, std::pair<unsigned, unsigned>> time_stamp;
-  for (std::shared_ptr<Package> el : Adj_u) {
+  for (const std::shared_ptr<Package> &el : Adj_u) {
     colour.emplace(el->get_file_name(), Colour::white);
     pred.emplace(el->get_file_name(), nullptr);
   }
@@ -94,12 +93,12 @@ void Package_manager::cycle_check(const std::shared_ptr<Package> package) {
   };
 }
 
-void Package_manager::remove(std::shared_ptr<Package> package) {
+void Package_manager::remove(const std::shared_ptr<Package> &package) {
   remove(package->get_file_name());
 }
 
 bool Thread_visit(
-    std::shared_ptr<Package> u,
+    const std::shared_ptr<Package> &u,
     std::unordered_map<std::string, std::atomic<Colour>> &colour) {
 
   colour[u->get_file_name()].store(Colour::grey, std::memory_order_relaxed);
@@ -117,14 +116,14 @@ bool Thread_visit(
 }
 
 void visit(std::unordered_map<std::string, std::atomic<Colour>> &colour,
-           std::shared_ptr<Package> package,
+           const std::shared_ptr<Package> &package,
            Map<std::string, std::shared_ptr<Package>> &map) {
   if (colour[package->get_file_name()].load(std::memory_order_relaxed) !=
       Colour::white) {
     return;
   }
 
-  for (auto elem : package->get_connected_packages()) {
+  for (const auto &elem : package->get_connected_packages()) {
     if (colour[elem->get_file_name()].load(std::memory_order_relaxed) ==
             Colour::white &&
         !(elem->get_using_flag())) {
@@ -180,8 +179,9 @@ void Package_manager::remove_unuse() {
   }
 
   size_t optimal_threads = std::thread::hardware_concurrency();
-  if (optimal_threads == 0)
+  if (optimal_threads == 0) {
     optimal_threads = 4;
+  }
 
   std::vector<std::thread> threads;
   std::vector<std::pair<std::string, std::shared_ptr<Package>>> tasks;
@@ -191,7 +191,7 @@ void Package_manager::remove_unuse() {
 
     if (package->get_using_flag()) {
       colour[value.first].store(Colour::black, std::memory_order_relaxed);
-      tasks.push_back({value.first, package});
+      tasks.emplace_back(value.first, package);
     }
   }
 
@@ -220,7 +220,8 @@ void Package_manager::remove_unuse_one_thread() {
   std::unordered_map<std::string, Colour> colour;
   std::unordered_map<std::string, std::shared_ptr<Package>> pred;
   std::unordered_map<std::string, std::pair<unsigned, unsigned>> time_stamp;
-  for (std::pair<const std::string, std::shared_ptr<Package>> value : map) {
+  for (const std::pair<const std::string, std::shared_ptr<Package>> &value :
+       map) {
     auto el = value.second;
     colour.emplace(el->get_file_name(), Colour::white);
     pred.emplace(el->get_file_name(), nullptr);
@@ -269,13 +270,13 @@ bool DFS_visit_destroy(
   return true;
 }
 
-bool Package_manager::cycle_destroy(const std::shared_ptr<Package> package) {
+bool Package_manager::cycle_destroy(const std::shared_ptr<Package> &package) {
   std::vector<std::shared_ptr<Package>> Adj_u =
       package->get_connected_packages();
   std::unordered_map<std::string, Colour> colour;
   std::unordered_map<std::string, std::shared_ptr<Package>> pred;
   std::unordered_map<std::string, std::pair<unsigned, unsigned>> time_stamp;
-  for (std::shared_ptr<Package> el : Adj_u) {
+  for (const std::shared_ptr<Package> &el : Adj_u) {
     colour.emplace(el->get_file_name(), Colour::white);
     pred.emplace(el->get_file_name(), nullptr);
   }

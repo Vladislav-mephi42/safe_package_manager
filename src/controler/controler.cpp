@@ -14,22 +14,20 @@ int read_int(std::istream &in) {
 
     in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     return number;
-  } else {
-    in.clear();
-    in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    in.setstate(std::ios_base::failbit);
-    return 0;
   }
+  in.clear();
+  in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  in.setstate(std::ios_base::failbit);
+  return 0;
 }
 
 std::string my_readline(std::istream &in) {
   std::string res;
   if (std::getline(in, res)) {
     return res;
-  } else {
-    in.setstate(std::ios_base::failbit);
-    return "";
   }
+  in.setstate(std::ios_base::failbit);
+  return "";
 }
 
 std::istream &
@@ -97,7 +95,7 @@ std::shared_ptr<Package> Controler::read_package(std::istream &in) {
   return nullptr;
 }
 
-std::ostream &Controler::write_package(std::shared_ptr<Package> package,
+std::ostream &Controler::write_package(const std::shared_ptr<Package> &package,
                                        std::ostream &out) {
   return package->write(out);
 }
@@ -129,9 +127,10 @@ Package_manager Controler::read_manager(std::istream &in) {
   return manager;
 }
 
-void Controler::write_mananger(Package_manager manager, std::ostream &out) {
+void Controler::write_mananger(const Package_manager &manager,
+                               std::ostream &out) {
 
-  for (auto &value : manager.map) {
+  for (const auto &value : manager.map) {
     if (value.second->get_using_flag()) {
       (value.second)->write(out);
     }

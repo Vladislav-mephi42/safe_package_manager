@@ -30,7 +30,7 @@ Empty_package::read(std::istream &in,
     return in;
   }
   read_linked_package(in, linked_package, strategies);
-  if (linked_package.get() == nullptr) {
+  if (linked_package) {
     throw std::runtime_error("deserealization error");
   }
   return in;
