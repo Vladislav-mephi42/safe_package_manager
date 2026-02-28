@@ -24,7 +24,7 @@ public:
   virtual void set_last_version(const std::string &new_version) = 0;
   virtual std::vector<std::shared_ptr<Package>>
   get_connected_packages() const noexcept = 0;
-  virtual bool insert_connected(std::shared_ptr<Package> package) = 0;
+  virtual bool insert_connected(const std::shared_ptr<Package> &package) = 0;
   virtual bool erase_connected(const Package &package) = 0;
   virtual bool operator==(const Package &) const = 0;
   virtual bool get_using_flag() const noexcept = 0;

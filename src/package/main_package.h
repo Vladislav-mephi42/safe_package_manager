@@ -108,7 +108,7 @@ public:
     return req_packages;
   }
 
-  bool insert_connected(std::shared_ptr<Package> package) override {
+  bool insert_connected(const std::shared_ptr<Package> &package) override {
     if (std::find(req_packages.begin(), req_packages.end(), package) !=
         req_packages.end()) {
       return false;

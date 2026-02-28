@@ -17,12 +17,12 @@ private:
   std::shared_ptr<Package> linked_package;
   void correct() {
 
-    if (file_name.length() < 5) {
-      throw std::invalid_argument("invalid file_name");
-    }
-    if (file_name.substr(file_name.length() - 4) != ".dep") {
-      throw std::invalid_argument("invalid file_name");
-    }
+    // if (file_name.length() < 5) {
+    //  throw std::invalid_argument("invalid file_name");
+    //}
+    // if (file_name.substr(file_name.length() - 4) != ".dep") {
+    // throw std::invalid_argument("invalid file_name");
+    //}
   }
 
 public:
@@ -95,7 +95,7 @@ public:
     return linked_package->get_connected_packages();
   }
 
-  bool insert_connected(std::shared_ptr<Package> package) override {
+  bool insert_connected(const std::shared_ptr<Package> &package) override {
     return linked_package->insert_connected(package);
   }
 
