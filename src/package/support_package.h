@@ -57,7 +57,9 @@ public:
     correct();
   }
 
-  Support_package() = default;
+  Support_package()
+      : file_name("default.dep"), publisher_name("default"),
+        current_version("default"), last_version("default") {}
 
   ~Support_package() override = default;
 
