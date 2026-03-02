@@ -14,157 +14,6 @@
 #include <utility>
 #include <vector>
 
-std::vector<std::string> generate_names(int count) {
-  std::vector<std::string> names;
-  names.reserve(count);
-  for (int i = 0; i < count; ++i) {
-    names.emplace_back("pkg_" + std::to_string(i) + ".dep");
-  }
-  return names;
-}
-
-int compute_total_packages(int root_count, int depth, int branching) {
-  int level_nodes = root_count;
-  int total = 0;
-  for (int d = 0; d <= depth; ++d) {
-    total += level_nodes;
-    level_nodes *= branching;
-  }
-  return total;
-}
-
-void build_manager_ms(Package_manager &pm, int root_count, int depth,
-                      int branching) {
-  int total_packages = compute_total_packages(
-      root_count, depth, branching); // ms - root nodes - Main_package
-                                     //  other nodes - Support_package
-  auto package_names = generate_names(total_packages);
-  int name_index = 0;
-
-  std::vector<std::shared_ptr<Package>> current_level;
-  for (int i = 0; i < root_count; ++i) {
-    auto root = std::make_shared<Main_package>(
-        package_names[name_index++], "vlad", "2.1", "2.1",
-        std::vector<std::shared_ptr<Package>>{});
-    current_level.push_back(root);
-  }
-
-  auto roots = current_level;
-
-  for (int d = 0; d < depth; ++d) {
-    std::vector<std::shared_ptr<Package>> next_level;
-    for (const auto &parent : current_level) {
-      for (int b = 0; b < branching; ++b) {
-        auto child = std::make_shared<Support_package>(
-            package_names[name_index++], "vlad", "2.1", "2.1",
-            std::vector<std::shared_ptr<Package>>{});
-        parent->insert_connected(child);
-        next_level.push_back(child);
-      }
-    }
-    current_level = std::move(next_level);
-  }
-
-  for (auto &root : roots) {
-    pm.add(root);
-  }
-}
-
-void build_manager_mm(Package_manager &pm, int root_count, int depth,
-                      int branching) {
-  int total_packages = compute_total_packages(
-      root_count, depth, branching); // mm - root nodes - Main_package
-                                     //  other nodes - Main_package
-  auto package_names = generate_names(total_packages);
-  int name_index = 0;
-
-  std::vector<std::shared_ptr<Package>> current_level;
-  for (int i = 0; i < root_count; ++i) {
-    auto root = std::make_shared<Main_package>(
-        package_names[name_index++], "vlad", "2.1", "2.1",
-        std::vector<std::shared_ptr<Package>>{});
-    current_level.push_back(root);
-  }
-
-  auto roots = current_level;
-
-  for (int d = 0; d < depth; ++d) {
-    std::vector<std::shared_ptr<Package>> next_level;
-    for (const auto &parent : current_level) {
-      for (int b = 0; b < branching; ++b) {
-        auto child = std::make_shared<Main_package>(
-            package_names[name_index++], "vlad", "2.1", "2.1",
-            std::vector<std::shared_ptr<Package>>{});
-        parent->insert_connected(child);
-        next_level.push_back(child);
-      }
-    }
-    current_level = std::move(next_level);
-  }
-
-  for (auto &root : roots) {
-    pm.add(root);
-  }
-}
-
-void build_manager_me(Package_manager &pm, int root_count, int depth,
-                      int branching) {
-  int total_packages = compute_total_packages(
-      root_count, depth, branching); // me - root nodes - Main_package
-                                     //  other nodes - Empty_package
-  auto package_names = generate_names(total_packages);
-  int name_index = 0;
-
-  std::vector<std::shared_ptr<Package>> current_level;
-  for (int i = 0; i < root_count; ++i) {
-    auto root = std::make_shared<Main_package>(
-        package_names[name_index++], "vlad", "2.1", "2.1",
-        std::vector<std::shared_ptr<Package>>{});
-    current_level.push_back(root);
-  }
-
-  auto roots = current_level;
-
-  for (int d = 0; d < depth; ++d) {
-    std::vector<std::shared_ptr<Package>> next_level;
-    for (const auto &parent : current_level) {
-      for (int b = 0; b < branching; ++b) {
-        auto child_main = std::make_shared<Main_package>(
-            Main_package(package_names[name_index++], "vlad", "2.1", "2.1",
-                         std::vector<std::shared_ptr<Package>>{}));
-        auto child = std::make_shared<Empty_package>(
-            package_names[name_index++], child_main);
-        parent->insert_connected(child);
-        next_level.push_back(child);
-      }
-    }
-    current_level = std::move(next_level);
-  }
-
-  for (auto &root : roots) {
-    pm.add(root);
-  }
-}
-
-std::vector<std::string> package_names = {
-    "coreutils.dep",           "networking.dep",      "crypto.lib.dep",
-    "ui.framework.dep",        "logging.sys.dep",     "parser.yaml.dep",
-    "compression.zlib.dep",    "graphics.opengl.dep", "database.sqlite.dep",
-    "security.tls.dep",        "filesystem.vfs.dep",  "config.json.dep",
-    "math.linalg.dep",         "audio.alc.dep",       "render.vulkan.dep",
-    "testing.gtest.dep",       "io.async.dep",        "shell.bash.dep",
-    "ipc.message.dep",         "utils.hash.dep",      "net.http.dep",
-    "script.lua.dep",          "storage.nvme.dep",    "debug.gdb.dep",
-    "profiler.perf.dep",       "driver.usb.dep",      "kernel.syscall.dep",
-    "memory.alloc.dep",        "scheduler.rt.dep",    "sensor.gpio.dep",
-    "serial.uart.dep",         "crypto.openssl.dep",  "ui.qt.dep",
-    "web.engine.dep",          "cli.argparse.dep",    "data.protobuf.dep",
-    "image.jpeg.dep",          "video.h264.dep",      "lang.cpp.std.dep",
-    "lang.python.runtime.dep", "vm.jit.dep",          "sandbox.seccomp.dep",
-    "auth.oauth.dep",          "event.loop.dep",      "cache.lru.dep",
-    "format.csv.dep",          "time.ntp.dep",        "fs.ext4.dep",
-    "net.bluetooth.dep",       "hw.riscv.dep"};
-
 TEST_CASE("Main_package") {
   SECTION("Constructors") {
     Main_package package;
@@ -392,7 +241,6 @@ TEST_CASE("Empty_package") {
     REQUIRE_THROWS(
         package.insert_connected(std::make_shared<Empty_package>(other)));
     REQUIRE(package.get_connected_packages().size() == 0);
-    REQUIRE_THROWS(*((package.get_connected_packages())[0].get()) == other);
     REQUIRE_THROWS(package.erase_connected(other));
 
     Main_package main_package;
@@ -404,5 +252,226 @@ TEST_CASE("Empty_package") {
     REQUIRE(*((package.get_connected_packages())[0].get()) == other);
     REQUIRE_NOTHROW(package.erase_connected(other));
     REQUIRE(package.get_connected_packages().size() == 0);
+  }
+}
+
+std::vector<std::string> generate_names(int count) {
+  std::vector<std::string> names;
+  names.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    names.emplace_back("pkg_" + std::to_string(i) + ".dep");
+  }
+  return names;
+}
+
+int compute_total_packages(int root_count, int depth, int branching) {
+  int level_nodes = root_count;
+  int total = 0;
+  for (int d = 0; d <= depth; ++d) {
+    total += level_nodes;
+    level_nodes *= branching;
+  }
+  return total;
+}
+
+void build_manager_ms(Package_manager &pm, int root_count, int depth,
+                      int branching) {
+  int total_packages = compute_total_packages(
+      root_count, depth, branching); // ms - root nodes - Main_package
+                                     //  other nodes - Support_package
+  auto package_names = generate_names(total_packages);
+  int name_index = 0;
+
+  std::vector<std::shared_ptr<Package>> current_level;
+  for (int i = 0; i < root_count; ++i) {
+    auto root = std::make_shared<Main_package>(
+        package_names[name_index++], "vlad", "2.1", "2.1",
+        std::vector<std::shared_ptr<Package>>{});
+    current_level.push_back(root);
+  }
+
+  auto roots = current_level;
+
+  for (int d = 0; d < depth; ++d) {
+    std::vector<std::shared_ptr<Package>> next_level;
+    for (const auto &parent : current_level) {
+      for (int b = 0; b < branching; ++b) {
+        auto child = std::make_shared<Support_package>(
+            package_names[name_index++], "vlad", "2.1", "2.1",
+            std::vector<std::shared_ptr<Package>>{});
+        parent->insert_connected(child);
+        next_level.push_back(child);
+      }
+    }
+    current_level = std::move(next_level);
+  }
+
+  for (auto &root : roots) {
+    pm.add(root);
+  }
+}
+
+void build_manager_mm(Package_manager &pm, int root_count, int depth,
+                      int branching) {
+  int total_packages = compute_total_packages(
+      root_count, depth, branching); // mm - root nodes - Main_package
+                                     //  other nodes - Main_package
+  auto package_names = generate_names(total_packages);
+  int name_index = 0;
+
+  std::vector<std::shared_ptr<Package>> current_level;
+  for (int i = 0; i < root_count; ++i) {
+    auto root = std::make_shared<Main_package>(
+        package_names[name_index++], "vlad", "2.1", "2.1",
+        std::vector<std::shared_ptr<Package>>{});
+    current_level.push_back(root);
+  }
+
+  auto roots = current_level;
+
+  for (int d = 0; d < depth; ++d) {
+    std::vector<std::shared_ptr<Package>> next_level;
+    for (const auto &parent : current_level) {
+      for (int b = 0; b < branching; ++b) {
+        auto child = std::make_shared<Main_package>(
+            package_names[name_index++], "vlad", "2.1", "2.1",
+            std::vector<std::shared_ptr<Package>>{});
+        parent->insert_connected(child);
+        next_level.push_back(child);
+      }
+    }
+    current_level = std::move(next_level);
+  }
+
+  for (auto &root : roots) {
+    pm.add(root);
+  }
+}
+
+void build_manager_me(Package_manager &pm, int root_count, int depth,
+                      int branching) {
+  int total_packages = compute_total_packages(
+      root_count, depth, branching); // me - root nodes - Main_package
+                                     //  other nodes - Empty_package
+  auto package_names = generate_names(total_packages);
+  int name_index = 0;
+
+  std::vector<std::shared_ptr<Package>> current_level;
+  for (int i = 0; i < root_count; ++i) {
+    auto root = std::make_shared<Main_package>(
+        package_names[name_index++], "vlad", "2.1", "2.1",
+        std::vector<std::shared_ptr<Package>>{});
+    current_level.push_back(root);
+  }
+
+  auto roots = current_level;
+
+  for (int d = 0; d < depth; ++d) {
+    std::vector<std::shared_ptr<Package>> next_level;
+    for (const auto &parent : current_level) {
+      for (int b = 0; b < branching; ++b) {
+        auto child_main = std::make_shared<Main_package>(
+            Main_package(package_names[name_index++], "vlad", "2.1", "2.1",
+                         std::vector<std::shared_ptr<Package>>{}));
+        auto child = std::make_shared<Empty_package>(
+            package_names[name_index++], child_main);
+        parent->insert_connected(child);
+        next_level.push_back(child);
+      }
+    }
+    current_level = std::move(next_level);
+  }
+
+  for (auto &root : roots) {
+    pm.add(root);
+  }
+}
+
+std::vector<std::string> package_names = {"pkg_1.dep",
+                                          "pkg_2.dep",
+                                          "pkg_3.lib.dep",
+                                          "ui.framework.dep",
+                                          "logging.sys.dep",
+                                          "parser.yaml.dep",
+                                          "compression.zlib.dep",
+                                          "graphics.opengl.dep",
+                                          "database.sqlite.dep",
+                                          "security.tls.dep",
+                                          "filesystem.vfs.dep",
+                                          "config.json.dep",
+                                          "math.linalg.dep",
+                                          "audio.alc.dep",
+                                          "render.vulkan.dep",
+                                          "testing.gtest.dep",
+                                          "io.async.dep",
+                                          "shell.bash.dep",
+                                          "ipc.message.dep",
+                                          "utils.hash.dep",
+                                          "net.http.dep",
+                                          "script.lua.dep",
+                                          "storage.nvme.dep",
+                                          "debug.gdb.dep",
+                                          "profiler.perf.dep",
+                                          "driver.usb.dep",
+                                          "kernel.syscall.dep",
+                                          "memory.alloc.dep",
+                                          "scheduler.rt.dep",
+                                          "sensor.gpio.dep",
+                                          "serial.uart.dep",
+                                          "crypto.openssl.dep",
+                                          "ui.qt.dep",
+                                          "web.engine.dep",
+                                          "cli.argparse.dep",
+                                          "data.protobuf.dep",
+                                          "image.jpeg.dep",
+                                          "video.h264.dep",
+                                          "lang.cpp.std.dep",
+                                          "lang.python.runtime.dep",
+                                          "vm.jit.dep",
+                                          "sandbox.seccomp.dep",
+                                          "auth.oauth.dep",
+                                          "event.loop.dep",
+                                          "cache.lru.dep",
+                                          "format.csv.dep",
+                                          "time.ntp.dep",
+                                          "fs.ext4.dep",
+                                          "net.bluetooth.dep",
+                                          "hw.riscv.dep"};
+
+TEST_CASE("Package manager") {
+  SECTION("Constructors") {
+    Package_manager pm;
+    REQUIRE(pm.size() == 0);
+    REQUIRE_NOTHROW(pm.clear());
+    REQUIRE(pm.size() == 0);
+    std::vector<std::shared_ptr<Package>> empty;
+    REQUIRE_NOTHROW(pm = Package_manager(empty));
+    REQUIRE(pm.size() == 0);
+  }
+  SECTION("Add (Basic)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+
+    Package_manager pm;
+
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE(pm.size() == 2);
+
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm.size() == 3);
+    pm = Package_manager();
+
+    Package_manager pm_2;
+
+    REQUIRE(pkg_2.get_connected_packages().size() == 1);
+    REQUIRE_NOTHROW(pm_2.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm_2.size() == 3);
   }
 }

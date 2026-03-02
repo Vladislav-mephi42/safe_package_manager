@@ -14,7 +14,11 @@ private:
   void connect_equal_pointers(const std::shared_ptr<Package> &package);
 
 public:
-  explicit Package_manager(std::vector<std::shared_ptr<Package>>);
+  explicit Package_manager(std::vector<std::shared_ptr<Package>> vec) {
+    for (const auto &elem : vec) {
+      add(elem);
+    }
+  }
   Package_manager() = default;
   ~Package_manager() = default;
   void add(std::shared_ptr<Package> package, bool main_flag = true);

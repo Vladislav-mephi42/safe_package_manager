@@ -1,6 +1,7 @@
 #include "package_manager/package_manager.h"
 #include "map/map.h"
 #include "package/package.h"
+#include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -8,9 +9,15 @@
 
 enum Colour { white, grey, black };
 
-void Package_manager::add(std::shared_ptr<Package> new_package,
-                          bool main_flag) {
+void Package_manager::add(
+
+    std::shared_ptr<Package>
+        new_package, // main flag is a variable, that told to programm what kind
+                     // of call it is - first for root package or other call for
+                     // kids-packages
+    bool main_flag) {
   const auto it = map.find(new_package->get_file_name());
+
   if (it != map.cend()) {
     if (!((*it).second)->get_using_flag() && main_flag) {
       ((*it).second)->set_using_flag(true);
@@ -20,24 +27,33 @@ void Package_manager::add(std::shared_ptr<Package> new_package,
       throw std::runtime_error("This package is already exist");
     }
   }
+
   connect_equal_pointers(new_package);
-  cycle_check(new_package);
+  cycle_check(
+      new_package); // may be it unnessesary, because connect_equal_pointers
+                    // include call of this function
+
   new_package->add();
   new_package->set_using_flag(main_flag);
   map.emplace(new_package->get_file_name(), new_package);
+
   for (const std::shared_ptr<Package> &req :
        new_package->get_connected_packages()) {
     add(req, false);
   }
 }
 
-void Package_manager::connect_equal_pointers(
+void Package_manager::connect_equal_pointers( // NEED AN OPTIMIZATION!!!: I must
+                                              // use map search instead of
+                                              // stupid traversing throught all
+                                              // elements in map
     const std::shared_ptr<Package> &package) {
   cycle_check(package);
 
   auto req_packages = package->get_connected_packages();
   for (const std::shared_ptr<Package> &req_package_ptr : req_packages) {
     auto map_it =
+        // bad part
         std::ranges::find_if(map, [req_package_ptr](const auto &map_value) {
           return (*(map_value.second)) == (*req_package_ptr);
         });
@@ -97,7 +113,8 @@ void Package_manager::remove(const std::shared_ptr<Package> &package) {
   remove(package->get_file_name());
 }
 
-bool Thread_visit(
+bool Thread_visit( // NEED an std::atomic mode(std::memory_order_relaxed)
+                   // analysis
     const std::shared_ptr<Package> &u,
     std::unordered_map<std::string, std::atomic<Colour>> &colour) {
 
