@@ -15,13 +15,20 @@ void Package_manager::add(
         new_package, // main flag is a variable, that told to programm what kind
                      // of call it is - first for root package or other call for
                      // kids-packages
-    bool main_flag) {
+    bool main_flag, bool cycle_destroy_flag) {
   const auto it = map.find(new_package->get_file_name());
 
   if (it != map.cend()) {
+    if (*(((*it).second).get()) != *(new_package.get())) {
+      throw std::runtime_error("New package is an old with other "
+                               "configuration, file_name is unique");
+    }
+
     if (!((*it).second)->get_using_flag() && main_flag) {
       ((*it).second)->set_using_flag(true);
-    } else if (!main_flag) {
+    }
+
+    else if (!main_flag) {
       return;
     } else {
       throw std::runtime_error("This package is already exist");
@@ -29,9 +36,10 @@ void Package_manager::add(
   }
 
   connect_equal_pointers(new_package);
-  cycle_check(
-      new_package); // may be it unnessesary, because connect_equal_pointers
-                    // include call of this function
+  cycle_check(new_package,
+              cycle_destroy_flag); // may be it unnessesary, because
+                                   // connect_equal_pointers include call
+                                   // of this function
 
   new_package->add();
   new_package->set_using_flag(main_flag);
@@ -43,21 +51,19 @@ void Package_manager::add(
   }
 }
 
-void Package_manager::connect_equal_pointers( // NEED AN OPTIMIZATION!!!: I must
-                                              // use map search instead of
-                                              // stupid traversing throught all
-                                              // elements in map
+void Package_manager::connect_equal_pointers(
     const std::shared_ptr<Package> &package) {
   cycle_check(package);
 
   auto req_packages = package->get_connected_packages();
   for (const std::shared_ptr<Package> &req_package_ptr : req_packages) {
-    auto map_it =
-        // bad part
-        std::ranges::find_if(map, [req_package_ptr](const auto &map_value) {
-          return (*(map_value.second)) == (*req_package_ptr);
-        });
+    auto map_it = map.find(req_package_ptr->get_file_name());
+
     if (map_it != map.end()) {
+      if (*((*map_it).second).get() == *(package.get())) {
+        throw std::runtime_error("New package is an old with other "
+                                 "configuration, file_name is unique");
+      }
       package->erase_connected(*req_package_ptr);
       package->insert_connected((*map_it).second);
     } else {
@@ -70,7 +76,7 @@ void DFS_visit(
     std::unordered_map<std::string, Colour> &colour,
     std::unordered_map<std::string, std::shared_ptr<Package>> &pred,
     std::unordered_map<std::string, std::pair<unsigned, unsigned>> &time_stamp,
-    unsigned &time) {
+    unsigned &time, bool cycle_dectroy_flag = true) {
   const std::string &name = u->get_file_name();
   colour[name] = Colour::grey;
   time_stamp[name].first = ++time;
@@ -82,6 +88,9 @@ void DFS_visit(
       pred[v_name] = u;
       DFS_visit(v, colour, pred, time_stamp, time);
     } else if (colour[v_name] == Colour::grey) {
+      if (cycle_dectroy_flag) {
+        u->erase_connected(*v);
+      }
       throw std::runtime_error("cycle found");
     }
   }
@@ -90,7 +99,8 @@ void DFS_visit(
   time_stamp[name].second = ++time;
 }
 
-void Package_manager::cycle_check(const std::shared_ptr<Package> &package) {
+void Package_manager::cycle_check(const std::shared_ptr<Package> &package,
+                                  bool cycle_destroy_flag) {
   std::vector<std::shared_ptr<Package>> Adj_u =
       package->get_connected_packages();
   std::unordered_map<std::string, Colour> colour;
@@ -104,7 +114,7 @@ void Package_manager::cycle_check(const std::shared_ptr<Package> &package) {
   for (std::shared_ptr<Package> el : Adj_u) {
 
     if (colour[el->get_file_name()] == Colour::white) {
-      DFS_visit(el, colour, pred, time_stamp, time);
+      DFS_visit(el, colour, pred, time_stamp, time, cycle_destroy_flag);
     }
   };
 }
@@ -166,18 +176,20 @@ void Package_manager::remove(const std::string &package_name) {
 
   for (auto &value : map) {
     auto package = value.second;
+
     if (package->get_using_flag() && value.first != package_name) {
+
       colour[value.first].store(Colour::black, std::memory_order_relaxed);
 
       for (const auto &dep : package->get_connected_packages()) {
         if (colour[dep->get_file_name()].load(std::memory_order_relaxed) ==
             Colour::white) {
+
           threads.emplace_back(Thread_visit, dep, std::ref(colour));
         }
       }
     }
   }
-
   for (auto &t : threads) {
     t.join();
   }

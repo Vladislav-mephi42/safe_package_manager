@@ -18,10 +18,11 @@ private:
   void correct() {
 
     if (file_name.length() < 5) {
-      throw std::invalid_argument("invalid file_name ");
+      std::cout << file_name.length() << std::endl;
+      throw std::invalid_argument("invalid file_name EMPTY LEN");
     }
     if (file_name.substr(file_name.length() - 4) != ".dep") {
-      throw std::invalid_argument("invalid file_name");
+      throw std::invalid_argument("invalid file_name EMPTY DEP");
     }
   }
 

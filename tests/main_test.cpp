@@ -10,6 +10,7 @@
 #include <format>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -374,7 +375,7 @@ void build_manager_me(Package_manager &pm, int root_count, int depth,
             Main_package(package_names[name_index++], "vlad", "2.1", "2.1",
                          std::vector<std::shared_ptr<Package>>{}));
         auto child = std::make_shared<Empty_package>(
-            package_names[name_index++], child_main);
+            child_main->get_file_name(), child_main);
         parent->insert_connected(child);
         next_level.push_back(child);
       }
@@ -387,58 +388,26 @@ void build_manager_me(Package_manager &pm, int root_count, int depth,
   }
 }
 
-std::vector<std::string> package_names = {"pkg_1.dep",
-                                          "pkg_2.dep",
-                                          "pkg_3.lib.dep",
-                                          "ui.framework.dep",
-                                          "logging.sys.dep",
-                                          "parser.yaml.dep",
-                                          "compression.zlib.dep",
-                                          "graphics.opengl.dep",
-                                          "database.sqlite.dep",
-                                          "security.tls.dep",
-                                          "filesystem.vfs.dep",
-                                          "config.json.dep",
-                                          "math.linalg.dep",
-                                          "audio.alc.dep",
-                                          "render.vulkan.dep",
-                                          "testing.gtest.dep",
-                                          "io.async.dep",
-                                          "shell.bash.dep",
-                                          "ipc.message.dep",
-                                          "utils.hash.dep",
-                                          "net.http.dep",
-                                          "script.lua.dep",
-                                          "storage.nvme.dep",
-                                          "debug.gdb.dep",
-                                          "profiler.perf.dep",
-                                          "driver.usb.dep",
-                                          "kernel.syscall.dep",
-                                          "memory.alloc.dep",
-                                          "scheduler.rt.dep",
-                                          "sensor.gpio.dep",
-                                          "serial.uart.dep",
-                                          "crypto.openssl.dep",
-                                          "ui.qt.dep",
-                                          "web.engine.dep",
-                                          "cli.argparse.dep",
-                                          "data.protobuf.dep",
-                                          "image.jpeg.dep",
-                                          "video.h264.dep",
-                                          "lang.cpp.std.dep",
-                                          "lang.python.runtime.dep",
-                                          "vm.jit.dep",
-                                          "sandbox.seccomp.dep",
-                                          "auth.oauth.dep",
-                                          "event.loop.dep",
-                                          "cache.lru.dep",
-                                          "format.csv.dep",
-                                          "time.ntp.dep",
-                                          "fs.ext4.dep",
-                                          "net.bluetooth.dep",
-                                          "hw.riscv.dep"};
+std::vector<std::string> package_names = {
+    "coreutils.dep",           "networking.dep",      "crypto.lib.dep",
+    "ui.framework.dep",        "logging.sys.dep",     "parser.yaml.dep",
+    "compression.zlib.dep",    "graphics.opengl.dep", "database.sqlite.dep",
+    "security.tls.dep",        "filesystem.vfs.dep",  "config.json.dep",
+    "math.linalg.dep",         "audio.alc.dep",       "render.vulkan.dep",
+    "testing.gtest.dep",       "io.async.dep",        "shell.bash.dep",
+    "ipc.message.dep",         "utils.hash.dep",      "net.http.dep",
+    "script.lua.dep",          "storage.nvme.dep",    "debug.gdb.dep",
+    "profiler.perf.dep",       "driver.usb.dep",      "kernel.syscall.dep",
+    "memory.alloc.dep",        "scheduler.rt.dep",    "sensor.gpio.dep",
+    "serial.uart.dep",         "crypto.openssl.dep",  "ui.qt.dep",
+    "web.engine.dep",          "cli.argparse.dep",    "data.protobuf.dep",
+    "image.jpeg.dep",          "video.h264.dep",      "lang.cpp.std.dep",
+    "lang.python.runtime.dep", "vm.jit.dep",          "sandbox.seccomp.dep",
+    "auth.oauth.dep",          "event.loop.dep",      "cache.lru.dep",
+    "format.csv.dep",          "time.ntp.dep",        "fs.ext4.dep",
+    "net.bluetooth.dep",       "hw.riscv.dep"};
 
-TEST_CASE("Package manager") {
+TEST_CASE("Package manager (Basic methods)") {
   SECTION("Constructors") {
     Package_manager pm;
     REQUIRE(pm.size() == 0);
@@ -455,23 +424,219 @@ TEST_CASE("Package manager") {
     Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
-
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
-
     Package_manager pm;
-
     REQUIRE_NOTHROW(pm.add(std::make_shared<Support_package>(pkg_2)));
     REQUIRE(pm.size() == 2);
-
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 3);
     pm = Package_manager();
-
     Package_manager pm_2;
-
     REQUIRE(pkg_2.get_connected_packages().size() == 1);
     REQUIRE_NOTHROW(pm_2.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm_2.size() == 3);
+  }
+  SECTION("Add (two same packages with different other atributes)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    Package_manager pm;
+    pm.add(std::make_shared<Main_package>(pkg_1));
+    REQUIRE(pm.size() == 3);
+    pkg_2.set_publisher_name("joker");
+    REQUIRE_THROWS(pm.add(std::make_shared<Support_package>(pkg_2)));
+  }
+
+  SECTION("Add (cycle found)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_3.insert_connected(std::make_shared<Main_package>(pkg_1));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    Package_manager pm;
+    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_1)));
+  }
+
+  SECTION("Add (the same package)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_1)));
+  }
+
+  SECTION("Remove (basic)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm.size() == 1);
+    REQUIRE_NOTHROW(pm.remove(pkg_1.get_file_name()));
+    REQUIRE(pm.size() == 0);
+  }
+
+  SECTION("Remove (chain of packages)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    Package_manager pm;
+
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(pm.remove(pkg_1.get_file_name()));
+    REQUIRE(pm.size() == 0);
+  }
+
+  SECTION("Remove (support package in use)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    Package_manager pm;
+
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(pm.remove(pkg_2.get_file_name()));
+    REQUIRE(pm.size() == 3);
+    REQUIRE_THROWS(pm.remove(pkg_3.get_file_name()));
+    REQUIRE(pm.size() == 3);
+  }
+
+  SECTION("Big parallel adding/removing") {
+    Package_manager pm;
+    for (int root_count = 1; root_count < 4; root_count += 2) {
+
+      REQUIRE_NOTHROW(build_manager_mm(pm, root_count, 3, 2));
+      REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
+      std::vector<std::string> package_names = generate_names(root_count);
+      for (const auto &elem : package_names) {
+        pm.remove(elem);
+      }
+      REQUIRE(pm.size() == 0);
+      REQUIRE_NOTHROW(build_manager_ms(pm, root_count, 3, 2));
+      REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
+      for (const auto &elem : package_names) {
+        pm.remove(elem);
+      }
+      REQUIRE(pm.size() == 0);
+      REQUIRE_NOTHROW(build_manager_me(pm, root_count, 3, 2));
+      REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
+      for (const auto &elem : package_names) {
+        pm.remove(elem);
+      }
+      REQUIRE(pm.size() == 0);
+    }
+  }
+  SECTION("find") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Support_package>(pkg_2)));
+    std::stringstream pkg_stream;
+    std::string pkg_str;
+    REQUIRE(pm.find(pkg_1.get_file_name()) == false);
+    REQUIRE(pm.find(pkg_2.get_file_name()) == true);
+    REQUIRE(pm.find(pkg_1.get_file_name(), pkg_stream) == false);
+    REQUIRE(pm.find(pkg_2.get_file_name(), pkg_stream) == true);
+    pkg_str = pkg_stream.str();
+    REQUIRE(pkg_str.find(pkg_2.get_file_name()) != std::string::npos);
+    REQUIRE(pm.find(pkg_3.get_file_name(), pkg_stream) == true);
+    pkg_str = pkg_stream.str();
+    REQUIRE(pkg_str.find(pkg_3.get_file_name()) != std::string::npos);
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+
+    pm = Package_manager();
+    Package_manager pm_2;
+    REQUIRE(pkg_2.get_connected_packages().size() == 1);
+    REQUIRE_NOTHROW(pm_2.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm_2.size() == 3);
+  }
+
+  SECTION("cycle destroy") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Empty_package pkg_3(package_names[2],
+                        std::make_shared<Main_package>(tmp_pkg));
+    pkg_3.insert_connected(std::make_shared<Main_package>(pkg_1));
+    pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    auto ptr_pkg_1 = std::make_shared<Main_package>(pkg_1);
+    Package_manager pm;
+    REQUIRE_THROWS(pm.add(ptr_pkg_1, false));
+    REQUIRE_NOTHROW(pm.cycle_destroy(ptr_pkg_1));
+  }
+}
+
+// Create a check for overload of remove!!!!!!!!!
+// Create a check for overload of remove!!!!!!!!!
+// Create a check for overload of remove!!!!!!!!!
+
+TEST_CASE("Package  manager (advanced checks)") {
+  SECTION("Removing package that is used by several other") {
+    std::vector<std::shared_ptr<Package>> empty;
+    auto pkg_1 = std::make_shared<Main_package>(
+        Main_package(package_names[0], "batman", "123456", "12344", empty));
+    auto pkg_2 = std::make_shared<Main_package>(
+        Main_package(package_names[1], "batman", "123456", "12344", empty));
+    auto tmp_pkg =
+        Main_package(package_names[2], "batman", "123456", "12344", empty);
+    auto pkg_3 = std::make_shared<Empty_package>(Empty_package(
+        package_names[2], std::make_shared<Main_package>(tmp_pkg)));
+    auto pkg_4 = std::make_shared<Empty_package>(Empty_package(
+        package_names[3], std::make_shared<Main_package>(tmp_pkg)));
+    pkg_1->insert_connected(pkg_3);
+    pkg_1->insert_connected(pkg_4);
+    pkg_2->insert_connected(pkg_3);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(pkg_1));
+    REQUIRE_NOTHROW(pm.add(pkg_2));
+    REQUIRE(pm.size() == 4);
+    REQUIRE_NOTHROW(pm.remove(pkg_1));
+    REQUIRE(pm.size() == 2);
+    REQUIRE_NOTHROW(pm.remove(pkg_2));
+    REQUIRE(pm.size() == 0);
+  }
+  SECTION("Same packages with different configuration error(1)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Support_package pkg_2(package_names[0], "batman", "123456", "12344", empty);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE(pm.size() == 1);
+  }
+  SECTION("Same packages with different configuration error(2)") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_2(package_names[0], "joker", "123456", "12344", empty);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_2)));
+    REQUIRE(pm.size() == 1);
   }
 }
