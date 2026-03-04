@@ -1,7 +1,7 @@
 #include "package_manager/package_manager.h"
 #include "map/map.h"
 #include "package/package.h"
-#include <iostream>
+
 #include <memory>
 #include <string>
 #include <thread>
