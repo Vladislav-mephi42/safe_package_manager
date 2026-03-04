@@ -12,7 +12,8 @@ private:
   Map<std::string, std::shared_ptr<Package>> map;
   static void cycle_check(const std::shared_ptr<Package> &package,
                           bool cycle_destroy_flag = true);
-  void connect_equal_pointers(const std::shared_ptr<Package> &package);
+  void connect_equal_pointers(const std::shared_ptr<Package> &package,
+                              bool cycle_destroy_flag = true);
 
 public:
   explicit Package_manager(std::vector<std::shared_ptr<Package>> vec) {

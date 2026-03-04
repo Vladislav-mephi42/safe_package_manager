@@ -485,6 +485,16 @@ TEST_CASE("Package manager (Basic methods)") {
     REQUIRE(pm.size() == 0);
   }
 
+  SECTION("Remove (basic) overload") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Package_manager pm;
+    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm.size() == 1);
+    REQUIRE_NOTHROW(pm.remove(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE(pm.size() == 0);
+  }
+
   SECTION("Remove (chain of packages)") {
     std::vector<std::shared_ptr<Package>> empty;
     Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
@@ -525,21 +535,21 @@ TEST_CASE("Package manager (Basic methods)") {
 
       REQUIRE_NOTHROW(build_manager_mm(pm, root_count, 3, 2));
       REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
-      std::vector<std::string> package_names = generate_names(root_count);
-      for (const auto &elem : package_names) {
-        pm.remove(elem);
+      std::vector<std::string> package_names = generate_names(pm.size());
+      for (int i = 0; i < root_count; i++) {
+        pm.remove(package_names[i]);
       }
       REQUIRE(pm.size() == 0);
       REQUIRE_NOTHROW(build_manager_ms(pm, root_count, 3, 2));
       REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
-      for (const auto &elem : package_names) {
-        pm.remove(elem);
+      for (int i = 0; i < root_count; i++) {
+        pm.remove(package_names[i]);
       }
       REQUIRE(pm.size() == 0);
       REQUIRE_NOTHROW(build_manager_me(pm, root_count, 3, 2));
       REQUIRE(pm.size() == compute_total_packages(root_count, 3, 2));
-      for (const auto &elem : package_names) {
-        pm.remove(elem);
+      for (int i = 0; i < root_count; i++) {
+        pm.remove(package_names[i]);
       }
       REQUIRE(pm.size() == 0);
     }
@@ -590,11 +600,24 @@ TEST_CASE("Package manager (Basic methods)") {
     REQUIRE_THROWS(pm.add(ptr_pkg_1, false));
     REQUIRE_NOTHROW(pm.cycle_destroy(ptr_pkg_1));
   }
-}
 
-// Create a check for overload of remove!!!!!!!!!
-// Create a check for overload of remove!!!!!!!!!
-// Create a check for overload of remove!!!!!!!!!
+  SECTION("remove unuse") {
+    Package_manager pm;
+
+    REQUIRE_NOTHROW(build_manager_mm(pm, 3, 3, 2));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 2));
+
+    Support_package pkg;
+    std::vector<std::shared_ptr<Package>> empty;
+    for (int i = 0; i < 20; i++) {
+      pkg = Support_package(package_names[i], "batman", "3.12", "3.12", empty);
+      pm.add(std::make_shared<Support_package>(pkg));
+    }
+    REQUIRE(pm.size() == (compute_total_packages(3, 3, 2)) + 20);
+    REQUIRE_NOTHROW(pm.remove_unuse());
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 2));
+  }
+}
 
 TEST_CASE("Package  manager (advanced checks)") {
   SECTION("Removing package that is used by several other") {

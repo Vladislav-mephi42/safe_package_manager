@@ -35,11 +35,7 @@ void Package_manager::add(
     }
   }
 
-  connect_equal_pointers(new_package);
-  cycle_check(new_package,
-              cycle_destroy_flag); // may be it unnessesary, because
-                                   // connect_equal_pointers include call
-                                   // of this function
+  connect_equal_pointers(new_package, cycle_destroy_flag);
 
   new_package->add();
   new_package->set_using_flag(main_flag);
@@ -52,8 +48,8 @@ void Package_manager::add(
 }
 
 void Package_manager::connect_equal_pointers(
-    const std::shared_ptr<Package> &package) {
-  cycle_check(package);
+    const std::shared_ptr<Package> &package, bool cycle_destroy_flag) {
+  cycle_check(package, cycle_destroy_flag);
 
   auto req_packages = package->get_connected_packages();
   for (const std::shared_ptr<Package> &req_package_ptr : req_packages) {
