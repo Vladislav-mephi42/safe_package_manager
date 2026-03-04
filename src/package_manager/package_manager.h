@@ -10,14 +10,21 @@ class Controler;
 class Package_manager {
 private:
   Map<std::string, std::shared_ptr<Package>> map;
-  static void cycle_check(const std::shared_ptr<Package> &package);
-  void connect_equal_pointers(const std::shared_ptr<Package> &package);
+  static void cycle_check(const std::shared_ptr<Package> &package,
+                          bool cycle_destroy_flag = true);
+  void connect_equal_pointers(const std::shared_ptr<Package> &package,
+                              bool cycle_destroy_flag = true);
 
 public:
-  explicit Package_manager(std::vector<std::shared_ptr<Package>>);
+  explicit Package_manager(std::vector<std::shared_ptr<Package>> vec) {
+    for (const auto &elem : vec) {
+      add(elem);
+    }
+  }
   Package_manager() = default;
   ~Package_manager() = default;
-  void add(std::shared_ptr<Package> package, bool main_flag = true);
+  void add(std::shared_ptr<Package> package, bool main_flag = true,
+           bool cycle_destroy_flag = true);
   void remove(const std::shared_ptr<Package> &package);
   void remove(const std::string &package_name);
   void remove_unuse();

@@ -17,12 +17,13 @@ private:
   std::shared_ptr<Package> linked_package;
   void correct() {
 
-    // if (file_name.length() < 5) {
-    //  throw std::invalid_argument("invalid file_name");
-    //}
-    // if (file_name.substr(file_name.length() - 4) != ".dep") {
-    // throw std::invalid_argument("invalid file_name");
-    //}
+    if (file_name.length() < 5) {
+      std::cout << file_name.length() << std::endl;
+      throw std::invalid_argument("invalid file_name EMPTY LEN");
+    }
+    if (file_name.substr(file_name.length() - 4) != ".dep") {
+      throw std::invalid_argument("invalid file_name EMPTY DEP");
+    }
   }
 
 public:
@@ -43,23 +44,35 @@ public:
     }
     return *this;
   }
-  Empty_package() = default;
+  Empty_package() : file_name("default.dep") {}
 
   ~Empty_package() override = default;
 
   std::string get_file_name() const noexcept override { return file_name; }
 
   std::string get_publisher_name() const noexcept override {
+    if (!linked_package) {
+      std::string empty;
+      return empty;
+    }
     return linked_package->get_publisher_name();
   }
 
   bool get_condition() const noexcept override { return condition; };
 
   std::string get_current_version() const noexcept override {
+    if (!linked_package) {
+      std::string empty;
+      return empty;
+    }
     return linked_package->get_current_version();
   };
 
   std::string get_last_version() const noexcept override {
+    if (!linked_package) {
+      std::string empty;
+      return empty;
+    }
     return linked_package->get_last_version();
   };
 
@@ -75,31 +88,50 @@ public:
   };
 
   void set_publisher_name(const std::string &new_publisher_name) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     if (new_publisher_name == "") {
       throw std::invalid_argument("invalid publisher_name");
     }
 
-    linked_package->set_file_name(new_publisher_name);
+    linked_package->set_publisher_name(new_publisher_name);
   };
 
   void set_last_version(const std::string &new_version) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     linked_package->set_last_version(new_version);
   }
 
   void set_current_version(const std::string &new_version) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     linked_package->set_current_version(new_version);
   }
 
   std::vector<std::shared_ptr<Package>>
   get_connected_packages() const noexcept override {
+    if (!linked_package) {
+      std::vector<std::shared_ptr<Package>> empty;
+      return empty;
+    }
     return linked_package->get_connected_packages();
   }
 
   bool insert_connected(const std::shared_ptr<Package> &package) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     return linked_package->insert_connected(package);
   }
 
   bool erase_connected(const Package &package) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     return linked_package->erase_connected(package);
   }
 
@@ -116,10 +148,16 @@ public:
   }
 
   bool get_using_flag() const noexcept override {
+    if (!linked_package) {
+      return false;
+    }
     return linked_package->get_using_flag();
   }
 
   void set_using_flag(bool new_using_flag) override {
+    if (!linked_package) {
+      throw std::runtime_error("No linked package");
+    }
     linked_package->set_using_flag(new_using_flag);
   }
 

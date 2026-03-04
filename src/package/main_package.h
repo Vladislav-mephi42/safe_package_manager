@@ -57,7 +57,9 @@ public:
     }
     return *this;
   }
-  Main_package() = default;
+  Main_package()
+      : file_name("default.dep"), publisher_name("default"),
+        current_version("default"), last_version("default") {}
   ~Main_package() override = default;
   void add() override;
   void remove() override;
