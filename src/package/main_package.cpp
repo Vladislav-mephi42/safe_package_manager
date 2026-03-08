@@ -1,5 +1,7 @@
 #include "package/main_package.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 void Main_package::add() {
   if (!condition) {
@@ -10,25 +12,22 @@ void Main_package::add() {
 void Main_package::remove() { condition = false; }
 
 std::ostream &Main_package::write(std::ostream &out) {
-  out << "main" << "\n";
-  if (using_flag) {
-    out << 1 << "\n";
-  } else {
-    out << 0 << "\n";
+  json j;
+  j["type"] = "main";
+  j["using_flag"] = using_flag;
+  j["file_name"] = file_name;
+  j["publisher_name"] = publisher_name;
+  j["current_version"] = current_version;
+  j["last_version"] = last_version;
+  j["req_packages"] = json::array();
+  for (const auto &pkg : req_packages) {
+    j["req_packages"].push_back(pkg->get_file_name());
   }
-
-  out << file_name << "\n";
-  out << publisher_name << "\n";
-  out << current_version << "\n";
-  out << last_version << "\n";
-  out << req_packages.size() << "\n";
-  for (const std::shared_ptr<Package> &package : req_packages) {
-    package->write(out);
-  }
+  out << j;
   return out;
 }
 
-int read_int(std::istream &in);
+json read_int(std::istream &in);
 std::string my_readline(std::istream &in);
 std::istream &
 read_req_packages(std::istream &in,
@@ -36,49 +35,21 @@ read_req_packages(std::istream &in,
                   std::vector<std::shared_ptr<Read_strategy>> &strategies,
                   int req_packages_count);
 
-std::istream &
-Main_package::read(std::istream &in,
-                   std::vector<std::shared_ptr<Read_strategy>> &strategies) {
-  if (!in) {
-    return in;
-  }
-  int using_flag = read_int(in);
+json Main_package::read(std::istream &in) {
+  json j;
+  in >> j;
 
-  if (!in) {
-    return in;
+  if (j["type"] != "main") {
+    throw std::runtime_error("deserealization error");
   }
-  std::string file_name = my_readline(in);
-  if (!in) {
-    return in;
-  }
+  set_using_flag(j.at("using_flag").get<bool>());
+  set_file_name(j.at("file_name").get<std::string>());
+  set_publisher_name(j.at("publisher_name").get<std::string>());
+  set_current_version(j.at("current_version").get<std::string>());
+  set_last_version(j.at("last_version").get<std::string>());
 
-  std::string publisher_name = my_readline(in);
-  if (!in) {
-    return in;
+  if (j.contains("req_packages") && j["req_packages"].is_array()) {
+    return j["req_packages"];
   }
-
-  std::string current_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  std::string last_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  int req_packages_count = read_int(in);
-  if (!in) {
-    return in;
-  }
-
-  std::vector<std::shared_ptr<Package>> tmp_req_packages(req_packages_count);
-
-  read_req_packages(in, tmp_req_packages, strategies, req_packages_count);
-  set_file_name(file_name);
-  set_publisher_name(publisher_name);
-  set_current_version(current_version);
-  set_last_version(last_version);
-  set_using_flag(static_cast<bool>(using_flag));
-  req_packages = tmp_req_packages;
-
-  return in;
+  throw std::runtime_error("deserealization error");
 }

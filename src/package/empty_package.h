@@ -4,9 +4,12 @@
 #include "package/package.h"
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+using json = nlohmann::json;
 
 class Empty_package : public Package {
 private:
@@ -162,9 +165,7 @@ public:
   }
 
   std::ostream &write(std::ostream &out) override;
-  std::istream &
-  read(std::istream &in,
-       std::vector<std::shared_ptr<Read_strategy>> &strategies) override;
+  json read(std::istream &in) override;
 
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Empty_package>(*this);

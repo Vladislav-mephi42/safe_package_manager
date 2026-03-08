@@ -5,7 +5,7 @@
 #include "package/package.h"
 #include "package/support_package.h"
 #include "package_manager/package_manager.h"
-#include <catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <cmath>
 
 #include <memory>
@@ -660,5 +660,18 @@ TEST_CASE("Package  manager (advanced checks)") {
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_2)));
     REQUIRE(pm.size() == 1);
+  }
+}
+
+TEST_CASE("Controler") {
+  SECTION("Packages methods that are needed to controler") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package other;
+    std::stringstream stream;
+    pkg.write(stream);
+    other.read(stream);
+    bool flag = (pkg == other); // fix catch error
+    REQUIRE(flag);
   }
 }

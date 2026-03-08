@@ -1,9 +1,12 @@
 #include "package/support_package.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
 #include <unordered_set>
 #include <vector>
+
+using json = nlohmann::json;
 
 void Support_package::add() {
   if (!condition) {
@@ -34,49 +37,9 @@ read_req_packages(std::istream &in,
                   std::vector<std::shared_ptr<Read_strategy>> &strategies,
                   int req_packages_count);
 
-std::istream &
-Support_package::read(std::istream &in,
-                      std::vector<std::shared_ptr<Read_strategy>> &strategies) {
-  if (!in) {
-    return in;
-  }
-  read_int(in); // read using flag, which is unsused in support package
-
-  if (!in) {
-    return in;
-  }
-  std::string file_name = my_readline(in);
-  if (!in) {
-    return in;
-  }
-
-  std::string publisher_name = my_readline(in);
-  if (!in) {
-    return in;
-  }
-
-  std::string current_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  std::string last_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  int req_packages_count = read_int(in);
-  if (!in) {
-    return in;
-  }
-  std::vector<std::shared_ptr<Package>> tmp_req_packages(req_packages_count);
-
-  read_req_packages(in, tmp_req_packages, strategies, req_packages_count);
-  set_file_name(file_name);
-  set_publisher_name(publisher_name);
-  set_current_version(current_version);
-  set_last_version(last_version);
-  req_packages = tmp_req_packages;
-
-  return in;
+json Support_package::read(std::istream &in) {
+  json j;
+  return j;
 }
 
 std::string devide_name(const std::string &filename, unsigned int part_number) {

@@ -1,8 +1,10 @@
+
 #include "controler/controler.h"
 
 #include "package/package.h"
 
 #include "package_manager/package_manager.h"
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -30,109 +32,75 @@ std::string my_readline(std::istream &in) {
   return "";
 }
 
-std::istream &
-read_req_packages(std::istream &in,
-                  std::vector<std::shared_ptr<Package>> &req_packages,
-                  std::vector<std::shared_ptr<Read_strategy>> &strategies,
-                  int req_packages_count) {
-  for (int i = 0; i < req_packages_count; i++) {
-    if (!in) {
-      throw std::runtime_error("invalid input(Req_1)");
-    }
-    std::string type_name = my_readline(in);
-    if (!in) {
-      throw std::runtime_error("invalid input(Req_2)");
-    }
-    for (auto &strategy : strategies) {
-      if (strategy->can_read(type_name)) {
-        req_packages[i] = strategy->read(in, strategies);
-      }
+json find_package(const std::string &filename, const std::string &file_name) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+    throw std::runtime_error("cann`t open file " + filename);
+  }
+
+  json data;
+  file >> data;
+
+  if (!data.contains("packages") || !data["packages"].is_array()) {
+    throw std::runtime_error("json format error");
+  }
+
+  for (const auto &package : data["packages"]) {
+    if (package.contains("file_name") && package["file_name"] == file_name) {
     }
   }
-  return in;
+  file.close();
+  return json();
 }
 
-std::istream &
-read_linked_package(std::istream &in, std::shared_ptr<Package> &linked_package,
-                    std::vector<std::shared_ptr<Read_strategy>> &strategies) {
+json find_package(json &data, const std::string &file_name) {
 
-  if (!in) {
-    throw std::runtime_error("invalid input(req_1)");
+  if (!data.contains("packages") || !data["packages"].is_array()) {
+    throw std::runtime_error("json format error");
   }
-  std::string type_name = my_readline(in);
-  if (!in) {
-    throw std::runtime_error("invalid input(req_2)");
+
+  for (const auto &package : data["packages"]) {
+    if (package.contains("file_name") && package["file_name"] == file_name) {
+    }
   }
-  for (auto &strategy : strategies) {
-    if (strategy->can_read(type_name)) {
-      linked_package = strategy->read(in, strategies);
-      if (linked_package == nullptr) {
-        throw std::runtime_error("deserealization error");
-      }
-      return in;
+}
+
+json find_package(std::istream &in, const std::string &file_name) {
+
+  json data;
+  in >> data;
+
+  if (!data.contains("packages") || !data["packages"].is_array()) {
+    throw std::runtime_error("json format error");
+  }
+
+  for (const auto &package : data["packages"]) {
+    if (package.contains("file_name") && package["file_name"] == file_name) {
     }
   }
 
-  return in;
+  return json();
 }
 
-std::shared_ptr<Package> Controler::read_package(std::istream &in) {
-  if (!in) {
-    in.setstate(std::ios::failbit);
-    return nullptr;
-  }
-  std::string type_name = my_readline(in);
-  if (!in) {
-    in.setstate(std::ios::failbit);
-    return nullptr;
-  }
-  for (auto &strategy : strategies) {
-    if (strategy->can_read(type_name)) {
-      return strategy->read(in, strategies);
+std::shared_ptr<Package> Controler::read_package(json &data,
+                                                 json *req_packages) {
+
+  for (const auto &strategy : strategies) {
+    if (strategy->can_read(data["type"])) {
+      return strategy->read(data, req_packages);
     }
   }
-  in.setstate(std::ios::failbit);
-  return nullptr;
 }
 
-std::ostream &Controler::write_package(const std::shared_ptr<Package> &package,
-                                       std::ostream &out) {
-  return package->write(out);
-}
+std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
+                                                 json &data) {
+  json package_data = find_package(data, file_name);
+  json req_packages;
+  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
 
-Package_manager Controler::read_manager(std::istream &in) {
-
-  Package_manager manager;
-  if (!in) {
-    throw std::runtime_error("bad input");
+  for (const auto &elem : req_packages) {
+    auto req_package = read_package(elem, data);
+    package->insert_connected(req_package);
   }
-  std::shared_ptr<Package> package = read_package(in);
-
-  while (!in.eof() && in) {
-    try {
-      if (!manager.find(package->get_file_name())) {
-        manager.add(package);
-      }
-    } catch (const std::exception &e) {
-      std::string what(e.what());
-      if (what == "cycle found") {
-        Package_manager pm;
-        pm.cycle_destroy(package);
-      }
-
-      throw;
-    }
-    package = read_package(in);
-  }
-  return manager;
-}
-
-void Controler::write_mananger(const Package_manager &manager,
-                               std::ostream &out) {
-
-  for (const auto &value : manager.map) {
-    if (value.second->get_using_flag()) {
-      (value.second)->write(out);
-    }
-  }
+  return package;
 }

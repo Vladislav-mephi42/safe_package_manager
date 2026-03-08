@@ -1,4 +1,4 @@
-
+#ifdef SKIP
 
 #include "controler/controler.h"
 
@@ -202,3 +202,6 @@ int main() {
   output_file.close();
   return 0;
 }
+#endif
+
+int main() { return 0; }
