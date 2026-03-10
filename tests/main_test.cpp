@@ -674,7 +674,7 @@ TEST_CASE("Controler") {
     bool flag = (pkg == other); // fix catch error
     REQUIRE(flag);
   }
-  SECTION("read package from json") {
+  SECTION("read package from json(Main package)") {
     json data;
     data["packages"] = json::array();
     std::vector<std::shared_ptr<Package>> empty;

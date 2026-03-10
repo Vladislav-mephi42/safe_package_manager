@@ -1,6 +1,7 @@
 #ifndef EMPTY_PACKAGE
 #define EMPTY_PACKAGE
 
+#include "package/main_package.h"
 #include "package/package.h"
 #include <iostream>
 #include <memory>

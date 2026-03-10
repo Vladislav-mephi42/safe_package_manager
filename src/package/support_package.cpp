@@ -17,18 +17,21 @@ void Support_package::add() {
 void Support_package::remove() { condition = false; }
 
 std::ostream &Support_package::write(std::ostream &out) {
-  out << "support" << "\n";
-  out << 0 << "\n";
-  out << file_name << "\n";
-  out << publisher_name << "\n";
-  out << current_version << "\n";
-  out << last_version << "\n";
-  out << req_packages.size() << "\n";
-  for (const std::shared_ptr<Package> &package : req_packages) {
-    package->write(out);
+  json j;
+  j["type"] = "support";
+  j["using_flag"] = using_flag;
+  j["file_name"] = file_name;
+  j["publisher_name"] = publisher_name;
+  j["current_version"] = current_version;
+  j["last_version"] = last_version;
+  j["req_packages"] = json::array();
+  for (const auto &pkg : req_packages) {
+    j["req_packages"].push_back(pkg->get_file_name());
   }
+  out << j;
   return out;
 }
+
 int read_int(std::istream &in);
 std::string my_readline(std::istream &in);
 std::istream &
@@ -39,7 +42,21 @@ read_req_packages(std::istream &in,
 
 json Support_package::read(std::istream &in) {
   json j;
-  return j;
+  in >> j;
+
+  if (j["type"] != "support") {
+    throw std::runtime_error("deserealization error");
+  }
+  set_using_flag(j.at("using_flag").get<bool>());
+  set_file_name(j.at("file_name").get<std::string>());
+  set_publisher_name(j.at("publisher_name").get<std::string>());
+  set_current_version(j.at("current_version").get<std::string>());
+  set_last_version(j.at("last_version").get<std::string>());
+
+  if (j.contains("req_packages") && j["req_packages"].is_array()) {
+    return j["req_packages"];
+  }
+  throw std::runtime_error("deserealization error");
 }
 
 std::string devide_name(const std::string &filename, unsigned int part_number) {

@@ -63,7 +63,24 @@ public:
   std::shared_ptr<Package> read(json data,
                                 json *req_packages_names) const override
 
-  {}
+  {
+    bool check =
+        data.contains("file_name") && data.contains("publisher_name") &&
+        data.contains("using_flag") && data.contains("current_version") &&
+        data.contains("last_version") && data.contains("req_packages");
+    if (!check) {
+      throw std::runtime_error("deserealization error");
+    }
+    Main_package tmp;
+    std::shared_ptr<Package> package = std::make_shared<Main_package>(tmp);
+    package->set_file_name(data["file_name"]);
+    package->set_publisher_name(data["publisher_name"]);
+    package->set_using_flag(data["using_flag"]);
+    package->set_current_version(data["current_version"]);
+    package->set_last_version(data["last_version"]);
+    *req_packages_names = data["req_packages_names"];
+    return package;
+  }
 };
 
 #endif
