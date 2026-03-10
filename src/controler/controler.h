@@ -41,6 +41,7 @@ public:
   json find_package(std::istream &in, const std::string &file_name);
   json find_package(json &data, const std::string &file_name);
   json find_package(const std::string &filename, const std::string &file_name);
+
 #ifdef SKIP
   Package_manager read_manager(std::istream &in);
   static void write_mananger(const Package_manager &manager, std::ostream &out);

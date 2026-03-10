@@ -32,7 +32,8 @@ std::string my_readline(std::istream &in) {
   return "";
 }
 
-json find_package(const std::string &filename, const std::string &file_name) {
+json Controler::find_package(const std::string &filename,
+                             const std::string &file_name) {
   std::ifstream file(filename);
   if (!file.is_open()) {
     throw std::runtime_error("cann`t open file " + filename);
@@ -47,13 +48,14 @@ json find_package(const std::string &filename, const std::string &file_name) {
 
   for (const auto &package : data["packages"]) {
     if (package.contains("file_name") && package["file_name"] == file_name) {
+      return package;
     }
   }
   file.close();
-  return json();
+  throw std::runtime_error(" package is  not founded");
 }
 
-json find_package(json &data, const std::string &file_name) {
+json Controler::find_package(json &data, const std::string &file_name) {
 
   if (!data.contains("packages") || !data["packages"].is_array()) {
     throw std::runtime_error("json format error");
@@ -61,11 +63,13 @@ json find_package(json &data, const std::string &file_name) {
 
   for (const auto &package : data["packages"]) {
     if (package.contains("file_name") && package["file_name"] == file_name) {
+      return package;
     }
   }
+  throw std::runtime_error(" package is  not founded");
 }
 
-json find_package(std::istream &in, const std::string &file_name) {
+json Controler::find_package(std::istream &in, const std::string &file_name) {
 
   json data;
   in >> data;
@@ -76,8 +80,10 @@ json find_package(std::istream &in, const std::string &file_name) {
 
   for (const auto &package : data["packages"]) {
     if (package.contains("file_name") && package["file_name"] == file_name) {
+      return package;
     }
   }
+  throw std::runtime_error(" package is  not founded");
 
   return json();
 }
@@ -90,6 +96,7 @@ std::shared_ptr<Package> Controler::read_package(json &data,
       return strategy->read(data, req_packages);
     }
   }
+  throw std::runtime_error("unknown type of package");
 }
 
 std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
@@ -99,7 +106,8 @@ std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
   std::shared_ptr<Package> package = read_package(package_data, &req_packages);
 
   for (const auto &elem : req_packages) {
-    auto req_package = read_package(elem, data);
+    std::string fn = elem;
+    auto req_package = read_package(fn, data);
     package->insert_connected(req_package);
   }
   return package;

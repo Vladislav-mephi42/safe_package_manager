@@ -674,4 +674,26 @@ TEST_CASE("Controler") {
     bool flag = (pkg == other); // fix catch error
     REQUIRE(flag);
   }
+  SECTION("read package from json") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package other(package_names[1], "batman", "123456", "12344", empty);
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Main_package>(pkg);
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
 }
