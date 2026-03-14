@@ -2,7 +2,6 @@
 #define MAIN_PACKAGE
 
 #include "package/package.h"
-#include "package/support_package.h"
 
 #include <algorithm>
 #include <memory>
@@ -155,8 +154,6 @@ public:
   }
 
   std::ostream &write(std::ostream &out) override;
-
-  json read(std::istream &in) override;
 
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Main_package>(*this);

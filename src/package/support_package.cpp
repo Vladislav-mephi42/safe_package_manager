@@ -40,25 +40,6 @@ read_req_packages(std::istream &in,
                   std::vector<std::shared_ptr<Read_strategy>> &strategies,
                   int req_packages_count);
 
-json Support_package::read(std::istream &in) {
-  json j;
-  in >> j;
-
-  if (j["type"] != "support") {
-    throw std::runtime_error("deserealization error");
-  }
-  set_using_flag(j.at("using_flag").get<bool>());
-  set_file_name(j.at("file_name").get<std::string>());
-  set_publisher_name(j.at("publisher_name").get<std::string>());
-  set_current_version(j.at("current_version").get<std::string>());
-  set_last_version(j.at("last_version").get<std::string>());
-
-  if (j.contains("req_packages") && j["req_packages"].is_array()) {
-    return j["req_packages"];
-  }
-  throw std::runtime_error("deserealization error");
-}
-
 std::string devide_name(const std::string &filename, unsigned int part_number) {
   const std::string suffix = ".dep";
   if (filename.length() < suffix.length() ||

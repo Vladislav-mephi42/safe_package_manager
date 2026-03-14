@@ -166,7 +166,6 @@ public:
   }
 
   std::ostream &write(std::ostream &out) override;
-  json read(std::istream &in) override;
 
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Empty_package>(*this);
