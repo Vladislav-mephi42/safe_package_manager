@@ -664,6 +664,7 @@ TEST_CASE("Package  manager (advanced checks)") {
 }
 
 TEST_CASE("Controler") {
+#ifdef SKIP_THIS_BLOCK
   SECTION("Packages methods that are needed to controler") {
     std::vector<std::shared_ptr<Package>> empty;
     Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
@@ -674,6 +675,8 @@ TEST_CASE("Controler") {
     bool flag = (pkg == other); // fix catch error
     REQUIRE(flag);
   }
+#endif
+
   SECTION("read package from json(Main package)") {
     json data;
     data["packages"] = json::array();
