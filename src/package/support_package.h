@@ -47,6 +47,10 @@ public:
         current_version(current_version), last_version(last_version),
         req_packages(req_packages) {
     correct();
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
   }
 
   Support_package(std::string &&file_name, std::string &&publisher_name,
@@ -58,6 +62,10 @@ public:
         last_version(std::move(last_version)),
         req_packages(std::move(req_packages)) {
     correct();
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
   }
 
   Support_package()
@@ -116,8 +124,8 @@ public:
     last_version = new_version;
   }
 
-  std::vector<std::shared_ptr<Package>>
-  get_connected_packages() const noexcept override {
+  const std::vector<std::shared_ptr<Package>> &
+  get_connected_packages() const override {
     return req_packages;
   }
 
@@ -132,6 +140,10 @@ public:
       return false;
     }
     req_packages.push_back(package);
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
     return true;
   }
 

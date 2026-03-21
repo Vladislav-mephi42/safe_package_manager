@@ -11,11 +11,11 @@ enum Colour { white, grey, black };
 
 void Package_manager::add(
 
-    std::shared_ptr<Package>
-        new_package, // main flag is a variable, that told to programm what kind
-                     // of call it is - first for root package or other call for
-                     // kids-packages
-    bool main_flag, bool cycle_destroy_flag) {
+    std::shared_ptr<Package> new_package, bool main_flag,
+    bool cycle_destroy_flag) // main flag is a variable, that told to programm
+                             // what kind of call it is - first for root package
+                             // or other call for kids-packages
+{
   const auto it = map.find(new_package->get_file_name());
 
   if (it != map.cend()) {
@@ -68,7 +68,7 @@ void Package_manager::connect_equal_pointers(
   }
 }
 void DFS_visit(
-    std::shared_ptr<Package> &u,
+    const std::shared_ptr<Package> &u,
     std::unordered_map<std::string, Colour> &colour,
     std::unordered_map<std::string, std::shared_ptr<Package>> &pred,
     std::unordered_map<std::string, std::pair<unsigned, unsigned>> &time_stamp,

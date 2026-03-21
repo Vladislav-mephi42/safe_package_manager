@@ -13,19 +13,21 @@ void Empty_package::add() {
 void Empty_package::remove() { condition = false; }
 
 std::ostream &Empty_package::write(std::ostream &out) {
-  json j;
-  j["type"] = "empty";
+
   std::stringstream sstr;
 
   linked_package->write(sstr);
   json linked = json::parse(sstr.str());
-  std::string type = linked["type"];
-  linked.erase("type");
-  linked["linked_type"] = type;
-  std::string file_name = linked["file_name"];
-  linked.erase("file_name");
-  linked["linked_file_name"] = file_name;
-  out << j << linked;
+
+  std::string linked_type = linked["type"];
+  linked["linked_type"] = linked_type;
+
+  std::string linked_file_name = linked["file_name"];
+  linked["linked_file_name"] = linked_file_name;
+
+  linked["type"] = "empty";
+  linked["file_name"] = file_name;
+  out << linked;
   return out;
 }
 

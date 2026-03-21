@@ -39,7 +39,7 @@ public:
     package->set_using_flag(data["using_flag"]);
     package->set_current_version(data["current_version"]);
     package->set_last_version(data["last_version"]);
-    *req_packages_names = data["req_packages_names"];
+    *req_packages_names = data["req_packages"];
     return package;
   }
 };
@@ -66,12 +66,12 @@ public:
     package->set_using_flag(data["using_flag"]);
     package->set_current_version(data["current_version"]);
     package->set_last_version(data["last_version"]);
-    *req_packages_names = data["req_packages_names"];
+    *req_packages_names = data["req_packages"];
     return package;
   }
 };
 
-class Empty_read : public Read_strategy {
+class Empty_with_main_read : public Read_strategy {
 public:
   bool can_read(const std::string &type_name) const override {
     return type_name == "empty";
@@ -95,7 +95,7 @@ public:
     package->set_using_flag(data["using_flag"]);
     package->set_current_version(data["current_version"]);
     package->set_last_version(data["last_version"]);
-    *req_packages_names = data["req_packages_names"];
+    *req_packages_names = data["req_packages"];
     Empty_package empty_package(data["file_name"], package);
     return std::make_shared<Empty_package>(empty_package);
   }

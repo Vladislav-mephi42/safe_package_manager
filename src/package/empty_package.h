@@ -116,11 +116,10 @@ public:
     linked_package->set_current_version(new_version);
   }
 
-  std::vector<std::shared_ptr<Package>>
-  get_connected_packages() const noexcept override {
+  const std::vector<std::shared_ptr<Package>> &
+  get_connected_packages() const override {
     if (!linked_package) {
-      std::vector<std::shared_ptr<Package>> empty;
-      return empty;
+      throw std::runtime_error("No linked package");
     }
     return linked_package->get_connected_packages();
   }

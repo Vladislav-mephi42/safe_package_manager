@@ -22,17 +22,20 @@ private:
 
 public:
   Controler() {
-    Empty_read empty;
+    Empty_with_main_read empty;
     Support_read support;
     Main_read main;
     json package_base;
-    strategies.push_back(std::make_shared<Empty_read>(empty));
+    strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
     strategies.push_back(std::make_shared<Support_read>(support));
     strategies.push_back(std::make_shared<Main_read>(main));
   }
 
   std::shared_ptr<Package> read_package(const std::string &file_name,
                                         json &data);
+  std::shared_ptr<Package>
+  read_package_from_file(const std::string &file_name,
+                         const std::string &input_file_name);
   std::shared_ptr<Package> read_package(json &data, json *req_packages);
 
   static std::ostream &write_package(const std::shared_ptr<Package> &package,
