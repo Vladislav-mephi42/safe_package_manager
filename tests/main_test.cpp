@@ -240,7 +240,7 @@ TEST_CASE("Empty_package") {
         "default.dep", std::make_shared<Main_package>(main_other));
     REQUIRE_THROWS(
         package.insert_connected(std::make_shared<Empty_package>(other)));
-    REQUIRE(package.get_connected_packages().size() == 0);
+    REQUIRE_THROWS(package.get_connected_packages());
     REQUIRE_THROWS(package.erase_connected(other));
 
     Main_package main_package;
@@ -682,7 +682,49 @@ TEST_CASE("Controler") {
     data["packages"] = json::array();
     std::vector<std::shared_ptr<Package>> empty;
     Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
-    Main_package other(package_names[1], "batman", "123456", "12344", empty);
+    Main_package req_pkg_1(package_names[1], "batman", "123456", "12344",
+                           empty);
+    Main_package req_pkg_2(package_names[2], "batman", "123456", "12344",
+                           empty);
+    pkg.insert_connected(std::make_shared<Main_package>(req_pkg_1));
+    pkg.insert_connected(std::make_shared<Main_package>(req_pkg_2));
+    Main_package other(package_names[3], "batman", "123456", "12344", empty);
+
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+
+    for (const auto &elem : pkg.get_connected_packages()) {
+      std::stringstream out_1;
+      json tmp_1;
+      elem->write(out_1);
+      tmp_1 = json::parse(out_1.str());
+      data["packages"].push_back(tmp_1);
+    }
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Main_package>(pkg);
+    auto new_req = new_pkg->get_connected_packages();
+
+    auto old_req = old_pkg->get_connected_packages();
+
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
+
+  SECTION("read package from json(Support package)") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Support_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Support_package other(package_names[1], "batman", "123456", "12344", empty);
     std::stringstream out_1;
     json tmp_1;
     pkg.write(out_1);
@@ -695,7 +737,34 @@ TEST_CASE("Controler") {
     data["packages"].push_back(tmp_2);
     Controler controler;
     auto new_pkg = controler.read_package(package_names[0], data);
-    auto old_pkg = std::make_shared<Main_package>(pkg);
+    auto old_pkg = std::make_shared<Support_package>(pkg);
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
+  SECTION("read package from json(Empty package)") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package main_pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package main_other(package_names[1], "batman", "123456", "12344",
+                            empty);
+    Empty_package pkg(package_names[0],
+                      std::make_shared<Main_package>(main_pkg));
+    Empty_package other(package_names[1],
+                        std::make_shared<Main_package>(main_other));
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Empty_package>(pkg);
     bool check = (*(new_pkg.get()) == pkg);
     REQUIRE(check);
   }
