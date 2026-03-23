@@ -31,6 +31,25 @@ std::ostream &Empty_package::write(std::ostream &out) {
   return out;
 }
 
+json Empty_package::write_to_json() const {
+
+  std::stringstream sstr;
+
+  linked_package->write(sstr);
+  json linked = json::parse(sstr.str());
+
+  std::string linked_type = linked["type"];
+  linked["linked_type"] = linked_type;
+
+  std::string linked_file_name = linked["file_name"];
+  linked["linked_file_name"] = linked_file_name;
+
+  linked["type"] = "empty";
+  linked["file_name"] = file_name;
+
+  return linked;
+}
+
 std::string my_readline(std::istream &in);
 std::istream &
 read_linked_package(std::istream &in, std::shared_ptr<Package> &linked_package,

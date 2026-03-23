@@ -184,6 +184,7 @@ public:
 
   static std::shared_ptr<Package>
   connect(std::vector<std::shared_ptr<Package>> packages);
+  json write_to_json() const override;
 };
 
 #endif

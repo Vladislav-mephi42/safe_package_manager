@@ -32,6 +32,22 @@ std::ostream &Support_package::write(std::ostream &out) {
   return out;
 }
 
+json Support_package::write_to_json() const {
+  json j;
+  j["type"] = "support";
+  j["using_flag"] = using_flag;
+  j["file_name"] = file_name;
+  j["publisher_name"] = publisher_name;
+  j["current_version"] = current_version;
+  j["last_version"] = last_version;
+  j["req_packages"] = json::array();
+  for (const auto &pkg : req_packages) {
+    j["req_packages"].push_back(pkg->get_file_name());
+  }
+
+  return j;
+}
+
 int read_int(std::istream &in);
 std::string my_readline(std::istream &in);
 std::istream &

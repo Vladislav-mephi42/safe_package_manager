@@ -33,6 +33,7 @@ public:
   virtual bool get_using_flag() const noexcept = 0;
   virtual void set_using_flag(bool new_using_flag) = 0;
   virtual std::ostream &write(std::ostream &out) = 0;
+  virtual json write_to_json() const = 0;
   virtual std::shared_ptr<Package> clone() const = 0;
 };
 

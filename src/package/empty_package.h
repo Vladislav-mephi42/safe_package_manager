@@ -169,6 +169,7 @@ public:
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Empty_package>(*this);
   }
+  json write_to_json() const override;
 };
 
 #endif
