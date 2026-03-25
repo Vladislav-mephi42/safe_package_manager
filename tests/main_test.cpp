@@ -837,6 +837,46 @@ TEST_CASE("Controler") {
         controler.read_package_from_file(package_names[0], "test_file_2.json");
     REQUIRE(*result.get() == pkg_1);
   }
+  SECTION("write package to file(cycle error)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1_tmp(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2_tmp(package_names[1], "batman", "123456", "12344",
+                              {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3_tmp(package_names[3],
+                            std::make_shared<Main_package>(tmp));
+    auto pkg_1 = std::make_shared<Main_package>(pkg_1_tmp);
+    auto pkg_2 = std::make_shared<Support_package>(pkg_2_tmp);
+    auto pkg_3 = std::make_shared<Empty_package>(pkg_3_tmp);
+    pkg_2->insert_connected(pkg_1);
+    pkg_1->insert_connected(pkg_2);
+    pkg_1->insert_connected(pkg_3);
+    Controler controler;
+    REQUIRE_THROWS(controler.write_package_to_file(pkg_1, "test_file_2.json"));
+  }
+  SECTION("write package from file(super bad format)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_2.insert_connected(std::make_shared<Main_package>(pkg_1));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    Controler controler;
+    REQUIRE_THROWS(controler.write_package_to_file(
+        std::make_shared<Main_package>(pkg_1), "test_file_2.json"));
+  }
 }
 
 TEST_CASE("Controler main purpose test") {

@@ -4,6 +4,7 @@
 #include "package/package.h"
 
 #include "package_manager/package_manager.h"
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -99,12 +100,18 @@ std::shared_ptr<Package> Controler::read_package(json &data,
   throw std::runtime_error("unknown type of package");
 }
 
-std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
-                                                 json &data) {
+std::shared_ptr<Package>
+Controler::read_package(const std::string &file_name, json &data,
+                        std::vector<std::string> &added_packages) {
   json package_data = find_package(data, file_name);
   json req_packages;
   std::shared_ptr<Package> package = read_package(package_data, &req_packages);
-
+  auto it = std::find(added_packages.begin(), added_packages.end(),
+                      package->get_file_name());
+  if (it != added_packages.end()) {
+    throw std::runtime_error("cycle found in json base");
+  }
+  added_packages.push_back(package->get_file_name());
   for (const auto &elem : req_packages) {
     std::string fn = elem;
     auto req_package = read_package(fn, data);
@@ -112,6 +119,21 @@ std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
   }
   return package;
 }
+
+std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
+                                                 json &data) {
+  json package_data = find_package(data, file_name);
+  json req_packages;
+  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
+  std::vector<std::string> added_packages = {package->get_file_name()};
+  for (const auto &elem : req_packages) {
+    std::string fn = elem;
+    auto req_package = read_package(fn, data, added_packages);
+    package->insert_connected(req_package);
+  }
+  return package;
+}
+
 std::shared_ptr<Package>
 Controler::read_package_from_file(const std::string &file_name,
                                   const std::string &input_file_name) {
@@ -155,6 +177,7 @@ void Controler::read_package_manager_from_file(
   }
 }
 bool contains_package(const json &array, const std::string &file_name) {
+
   if (!array.is_array()) {
     throw std::runtime_error("bad format");
   }
@@ -168,29 +191,32 @@ bool contains_package(const json &array, const std::string &file_name) {
   return false;
 }
 bool contains_package_2(const json &array, const std::string &file_name) {
+
   if (!array.is_array()) {
+    std::cout << "TYPE TYPE TYPE TYPE ======>>>>>: " << array.type_name()
+              << std::endl;
     throw std::runtime_error("bad format");
   }
-  std::cout << "ARRAY" << std::endl;
-  std::cout << array.dump(4) << std::endl;
   for (const auto &elem : array) {
 
     if (elem["file_name"] == file_name) {
 
       return true;
     }
-    std::cout << "Name of package on check  " << file_name << " Name of elem"
-              << elem["file_name"] << std::endl;
   }
   return false;
 }
-void write_package_to_json(const std::shared_ptr<Package> &package,
-                           json &data) {
-  if (!contains_package(data["packages"], package->get_file_name())) {
-    data["packages"].push_back(package->write_to_json());
+void Controler::write_package_to_json(const std::shared_ptr<Package> &package,
+                                      json &new_data) {
+  pm->cycle_check(package);
+  if (!contains_package_2(new_data, package->get_file_name())) {
+    new_data.push_back(package->write_to_json());
+  } else {
+    throw std::runtime_error("unreal package");
   }
+  std::vector<std::string> added_packages = {package->get_file_name()};
   for (const auto &elem : package->get_connected_packages()) {
-    write_package_to_json(elem, data);
+    write_package_to_json(elem, new_data);
   }
 }
 
@@ -214,7 +240,15 @@ void Controler::write_package_to_file(const std::shared_ptr<Package> &package,
   if (!output.is_open()) {
     throw std::runtime_error("Can't open file");
   }
-  write_package_to_json(package, data);
+  json new_data;
+  new_data = json::array();
+
+  write_package_to_json(package, new_data);
+  for (const auto &elem : new_data) {
+    if (!contains_package(data["packages"], elem["file_name"])) {
+      data["packages"].push_back(elem);
+    }
+  }
 
   output << data.dump(4);
   output.close();
@@ -231,8 +265,14 @@ void Controler::write_package_manager_to_file(
   }
   for (const auto &elem : pm.map) {
     auto package = elem.second;
-
-    write_package_to_json(package, data);
+    json new_data;
+    new_data = json::array();
+    write_package_to_json(package, new_data);
+    for (const auto &elem_2 : new_data) {
+      if (!contains_package_2(data["packages"], elem_2["file_name"])) {
+        data["packages"].push_back(elem_2);
+      }
+    }
   }
 
   output << data.dump(4);

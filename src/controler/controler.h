@@ -47,11 +47,15 @@ public:
 
   std::shared_ptr<Package> read_package(const std::string &file_name,
                                         json &data);
+  std::shared_ptr<Package>
+  read_package(const std::string &file_name, json &data,
+               std::vector<std::string> &added_packages);
   Controler(std::vector<std::string> json_repositories_names,
-            std::string storage_file_name, Package_manager *pm)
+            std::string storage_file_name, Package_manager *pm,
+            bool load_from_storage = false)
       : json_repozitories_names(json_repositories_names),
         storage_file_name(storage_file_name), pm(pm) {
-    correct_json(storage_file_name);
+
     for (const auto &elem : json_repositories_names) {
       correct_json(elem);
     }
@@ -61,7 +65,11 @@ public:
     strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
     strategies.push_back(std::make_shared<Support_read>(support));
     strategies.push_back(std::make_shared<Main_read>(main));
-    write_package_manager_to_file(storage_file_name, *pm);
+    if (!load_from_storage) {
+      write_package_manager_to_file(storage_file_name, *pm);
+    } else {
+      read_package_manager_from_file(storage_file_name, *pm);
+    }
   }
 
   const std::vector<std::string> &get_json_repozitories_names() const noexcept {
@@ -111,5 +119,7 @@ public:
   bool find_package(const std::string &file_name) {
     return pm->find(file_name);
   }
+  void write_package_to_json(const std::shared_ptr<Package> &package,
+                             json &data);
 };
 #endif

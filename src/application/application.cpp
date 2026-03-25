@@ -45,7 +45,7 @@ int main() {
     if (storage_file_name != "") {
 
       controler = Controler(json_repositories_names, storage_file_name,
-                            &package_manager);
+                            &package_manager, true);
 
     } else {
       controler =
