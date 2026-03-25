@@ -27,7 +27,7 @@ std::ostream &Empty_package::write(std::ostream &out) {
 
   linked["type"] = "empty";
   linked["file_name"] = file_name;
-  out << linked;
+  out << linked.dump(4);
   return out;
 }
 

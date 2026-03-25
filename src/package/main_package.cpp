@@ -23,7 +23,7 @@ std::ostream &Main_package::write(std::ostream &out) {
   for (const auto &pkg : req_packages) {
     j["req_packages"].push_back(pkg->get_file_name());
   }
-  out << j;
+  out << j.dump(4);
   return out;
 }
 
