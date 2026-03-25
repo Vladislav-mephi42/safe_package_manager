@@ -859,6 +859,7 @@ TEST_CASE("Controler") {
     Controler controler;
     REQUIRE_THROWS(controler.write_package_to_file(pkg_1, "test_file_2.json"));
   }
+
   SECTION("write package from file(super bad format)") {
     json data;
     data["packages"] = json::array();

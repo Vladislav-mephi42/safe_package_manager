@@ -23,8 +23,6 @@ public:
         << std::endl;
     out << "4. Remove unused----------------------------------------"
         << std::endl;
-    out << "5. Add package from file--------------------------------"
-        << std::endl;
     out << "6. Print size-------------------------------------------"
         << std::endl;
     out << "7. Global update----------------------------------------"
