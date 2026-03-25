@@ -103,18 +103,19 @@ std::shared_ptr<Package> Controler::read_package(json &data,
 std::shared_ptr<Package>
 Controler::read_package(const std::string &file_name, json &data,
                         std::vector<std::string> &added_packages) {
-  json package_data = find_package(data, file_name);
-  json req_packages;
-  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
-  auto it = std::find(added_packages.begin(), added_packages.end(),
-                      package->get_file_name());
+  auto it = std::find(added_packages.begin(), added_packages.end(), file_name);
   if (it != added_packages.end()) {
     throw std::runtime_error("cycle found in json base");
   }
+  json package_data = find_package(data, file_name);
+  json req_packages;
+
+  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
+
   added_packages.push_back(package->get_file_name());
   for (const auto &elem : req_packages) {
     std::string fn = elem;
-    auto req_package = read_package(fn, data);
+    auto req_package = read_package(fn, data, added_packages);
     package->insert_connected(req_package);
   }
   return package;
@@ -125,7 +126,8 @@ std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
   json package_data = find_package(data, file_name);
   json req_packages;
   std::shared_ptr<Package> package = read_package(package_data, &req_packages);
-  std::vector<std::string> added_packages = {package->get_file_name()};
+  std::vector<std::string> added_packages;
+  added_packages.push_back(file_name);
   for (const auto &elem : req_packages) {
     std::string fn = elem;
     auto req_package = read_package(fn, data, added_packages);
@@ -329,6 +331,40 @@ void Controler::remove_package(const std::string &file_name) {
     json data;
     ifile >> data;
     pm->remove(file_name);
+    ifile.close();
+    write_package_manager_to_file(storage_file_name, *pm);
+  } else {
+    throw std::runtime_error("cann`t open storage");
+  }
+}
+
+void Controler::remove_unuse() {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
+  std::ifstream ifile(storage_file_name);
+  if (ifile.is_open()) {
+    json data;
+    ifile >> data;
+    pm->remove_unuse();
+    ifile.close();
+    write_package_manager_to_file(storage_file_name, *pm);
+  } else {
+    throw std::runtime_error("cann`t open storage");
+  }
+}
+
+void Controler::global_update() {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
+  std::ifstream ifile(storage_file_name);
+  if (ifile.is_open()) {
+    json data;
+    ifile >> data;
+    pm->global_update();
     ifile.close();
     write_package_manager_to_file(storage_file_name, *pm);
   } else {

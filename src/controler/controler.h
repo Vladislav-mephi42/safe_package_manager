@@ -121,5 +121,7 @@ public:
   }
   void write_package_to_json(const std::shared_ptr<Package> &package,
                              json &data);
+  void remove_unuse();
+  void global_update();
 };
 #endif
