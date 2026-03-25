@@ -154,10 +154,39 @@ void Controler::read_package_manager_from_file(
     }
   }
 }
+bool contains_package(const json &array, const std::string &file_name) {
+  if (!array.is_array()) {
+    throw std::runtime_error("bad format");
+  }
+  for (const auto &elem : array) {
 
+    if (elem["file_name"] == file_name) {
+
+      return true;
+    }
+  }
+  return false;
+}
+bool contains_package_2(const json &array, const std::string &file_name) {
+  if (!array.is_array()) {
+    throw std::runtime_error("bad format");
+  }
+  std::cout << "ARRAY" << std::endl;
+  std::cout << array.dump(4) << std::endl;
+  for (const auto &elem : array) {
+
+    if (elem["file_name"] == file_name) {
+
+      return true;
+    }
+    std::cout << "Name of package on check  " << file_name << " Name of elem"
+              << elem["file_name"] << std::endl;
+  }
+  return false;
+}
 void write_package_to_json(const std::shared_ptr<Package> &package,
                            json &data) {
-  if (!data["packages"].contains(package->get_file_name())) {
+  if (!contains_package(data["packages"], package->get_file_name())) {
     data["packages"].push_back(package->write_to_json());
   }
   for (const auto &elem : package->get_connected_packages()) {
@@ -211,42 +240,58 @@ void Controler::write_package_manager_to_file(
 }
 
 void Controler::add_package(const std::string &file_name) {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
   for (const auto &elem : json_repozitories_names) {
+
     std::ifstream file(elem);
     if (file.is_open()) {
       json data;
       file >> data;
       if (data.contains("packages")) {
-        if (data["packages"].contains(file_name)) {
-          file.close();
+
+        if (contains_package(data["packages"], file_name)) {
+
           auto package = read_package(file_name, data);
-          pm->add(package);
+          try {
+            pm->add(package);
+          } catch (const std::exception &e) {
+            std::string what(e.what());
+            if (what == "cycle found") {
+              pm->cycle_destroy(package);
+            }
+            throw std::runtime_error("cycle found");
+          }
           write_package_to_file(package, storage_file_name);
+          return;
         }
       }
+      file.close();
+    }
+
+    else {
+      throw std::runtime_error("Can`t open file");
     }
   }
+
+  throw std::runtime_error("No such package in repozitories");
 }
 
 void Controler::remove_package(const std::string &file_name) {
-
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
   std::ifstream ifile(storage_file_name);
   if (ifile.is_open()) {
     json data;
     ifile >> data;
     pm->remove(file_name);
-
-    if (data.contains("packages")) {
-      if (data["packages"].contains(file_name)) {
-        ifile.close();
-        data["packages"].erase(file_name);
-        std::ofstream file(storage_file_name);
-        file << data;
-        file.close();
-      }
-    } else {
-      throw std::runtime_error("bad storage format");
-    }
+    ifile.close();
+    write_package_manager_to_file(storage_file_name, *pm);
+  } else {
+    throw std::runtime_error("cann`t open storage");
   }
-  throw std::runtime_error("cann`t open storage");
 }

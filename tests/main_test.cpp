@@ -838,3 +838,44 @@ TEST_CASE("Controler") {
     REQUIRE(*result.get() == pkg_1);
   }
 }
+
+TEST_CASE("Controler main purpose test") {
+  SECTION("Add/Remove") {
+    Package_manager pm;
+    build_manager_ms(pm, 3, 3, 3);
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
+    Controler controler;
+    REQUIRE_NOTHROW(controler =
+                        Controler({"repozitory_1.json", "repozitory_2.json"},
+                                  "storage.json", &pm));
+
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    std::ofstream file_1("repozitory_1.json");
+    std::ofstream file_2("repozitory_2.json");
+    json data;
+    data["packages"] = json::array();
+    file_1 << data;
+    file_2 << data;
+    file_1.close();
+    file_2.close();
+
+    controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
+                                    "repozitory_2.json");
+    REQUIRE_NOTHROW(controler.add_package(pkg_2.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
+    REQUIRE_NOTHROW(controler.add_package(pkg_3.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 2);
+    REQUIRE_NOTHROW(controler.add_package(pkg_1.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 3);
+    REQUIRE_THROWS(controler.remove_package(pkg_3.get_file_name()));
+    controler.remove_package(pkg_1.get_file_name());
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
+    controler.remove_package(pkg_3.get_file_name());
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
+  }
+}

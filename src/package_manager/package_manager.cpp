@@ -11,7 +11,7 @@ enum Colour { white, grey, black };
 
 void Package_manager::add(
 
-    std::shared_ptr<Package> new_package, bool main_flag,
+    const std::shared_ptr<Package> &new_package, bool main_flag,
     bool cycle_destroy_flag) // main flag is a variable, that told to programm
                              // what kind of call it is - first for root package
                              // or other call for kids-packages

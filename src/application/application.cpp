@@ -1,6 +1,6 @@
-#ifdef SKIP
 
 #include "controler/controler.h"
+#include "view/view.h"
 
 #include "package/package.h"
 
@@ -10,116 +10,69 @@
 #include <limits>
 #include <memory>
 
-void print_menu() {
-
-  std::cout << std::endl;
-  std::cout << "=========================MENU==========================="
-            << std::endl;
-  std::cout << "1. Add package------------------------------------------"
-            << std::endl;
-  std::cout << "2. Remove package --------------------------------------"
-            << std::endl;
-  std::cout << "3. Find package-----------------------------------------"
-            << std::endl;
-  std::cout << "4. Remove unused----------------------------------------"
-            << std::endl;
-  std::cout << "5. Add package from file--------------------------------"
-            << std::endl;
-  std::cout << "6. Print size-------------------------------------------"
-            << std::endl;
-  std::cout << "7. Global update----------------------------------------"
-            << std::endl;
-
-  std::cout << "9. EXIT-------------------------------------------------"
-            << std::endl;
-  std::cout << "========================================================"
-            << std::endl;
-  std::cout << std::endl;
-}
-
-void package_format() {
-  std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout << "INPUT PACKAGE FORMAT\n" << std::endl;
-
-  std::cout << "package type(for example support)" << std::endl;
-  std::cout << "using flag\n" << std::endl;
-  std::cout << "File_name(end with .dep\\n" << std::endl;
-  std::cout << "Publisher name\\n" << std::endl;
-  std::cout << "Current version\\n" << std::endl;
-  std::cout << "Last version\\n" << std::endl;
-  std::cout << "Count of requirement packages\\n" << std::endl;
-  std::cout << "Req_packages in INPUT PACKAGE FORMAT\\n" << std::endl;
-  std::cout << std::endl;
-  std::cout << std::endl;
-}
-
-int read_int(const std::string &prompt) {
-  int number = 0;
-
-  while (true) {
-    std::cout << "Input " << prompt << " --> ";
-
-    if (std::cin >> number) {
-      std::cin.clear();
-      std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      break;
-    }
-    if (std::cin.eof()) {
-      throw std::runtime_error("EOF");
-    }
-
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cout << "Wrong input, please try again." << std::endl;
-  }
-
-  return number;
-}
-std::string my_readline(std::istream &in);
 int main() {
-  Controler controler;
+
   Package_manager package_manager;
   std::string package_name;
+  Controler controler;
   std::cout
       << "Enter backup file_name\n If you dont want loading from backup, Enter"
       << std::endl;
   std::shared_ptr<Package> package;
-  std::string file_name = my_readline(std::cin);
-  try {
-    std::ifstream input_file(file_name);
-
-    if (input_file.is_open()) {
-      package_manager = controler.read_manager(input_file);
-      input_file.close();
-    } else {
-      std::cout << "Starting without backup" << std::endl;
+  std::string storage_file_name = View::readline(std::cin);
+  std::cout
+      << "Enter json data bases names, the first step is writting number of it"
+      << std::endl;
+  std::cout
+      << "If you write 0, default data bases will be used (1.json, 2.json)"
+      << std::endl;
+  int len = View::read_int("number a number of json data bases names", std::cin,
+                           std::cout);
+  std::vector<std::string> json_repositories_names;
+  if (len > 0) {
+    for (int i = 0; i < len; i++) {
+      std::string base_name = View::readline(std::cin);
+      json_repositories_names.push_back(base_name);
     }
-  } catch (const std::exception &e) {
-    std::string what(e.what());
-
-    std::cerr << "Error: " << e.what() << std::endl;
-
-    return 1;
+  } else {
+    std::cout << "start with default repozitories (1.json, 2.json)"
+              << std::endl;
+    json_repositories_names = {"1.json", "2.json"};
   }
 
   try {
-    std::string file_name;
-    std::ifstream package_file;
-    int option = 0;
-    do {
 
-      print_menu();
-      option = read_int("option");
+    if (storage_file_name != "") {
+
+      controler = Controler(json_repositories_names, storage_file_name,
+                            &package_manager);
+
+    } else {
+      controler =
+          Controler(json_repositories_names, "backup.json", &package_manager);
+      std::cout << "Starting without backup" << std::endl;
+      std::cout << "This package manager will be stored in bacup.json"
+                << std::endl;
+    }
+  } catch (const std::exception &e) {
+    std::string what(e.what());
+    std::cerr << "Error: " << e.what() << std::endl;
+    std::cout << "Fail starting, please try again" << std::endl;
+    return 1;
+  }
+
+  std::string file_name;
+  std::ifstream package_file;
+  int option = 0;
+  do {
+    try {
+      View::print_menu(std::cout);
+      option = View::read_int("option", std::cin, std::cout);
       switch (option) {
       case 1:
-        package_format();
-        package = controler.read_package(std::cin);
-        if (package != nullptr) {
-          package_manager.add(package);
-        } else {
-          throw std::runtime_error("bad input");
-        }
+        View::package_format(std::cout);
+        package_name = View::readline(std::cin);
+        controler.add_package(package_name);
         break;
 
       case 2:
@@ -131,43 +84,28 @@ int main() {
         break;
 
       case 3:
-        std::cout << "package name -->" << std::flush;
-
-        std::cin >> package_name;
+        std::cout << "print package name -->" << std::flush;
+        package_name = View::readline(std::cin);
         if (package_manager.find(package_name, std::cout)) {
           std::cout << "This pakage exist" << std::endl;
           break;
         }
         std::cout << "This pakage did not exist" << std::endl;
         break;
+#ifdef SKIP
       case 4:
-        package_manager.remove_unuse();
+        controler.remove_unuse();
         break;
-      case 5:
-        std::cout << "Enter file_name -->" << std::flush;
-        file_name = my_readline(std::cin);
-        package_file = std::ifstream(file_name);
+#endif
 
-        if (!package_file.is_open()) {
-          std::cerr << "File didnot exist\n";
-          return 1;
-        }
-
-        package = controler.read_package(package_file);
-        if (package != nullptr) {
-          package_manager.add(package);
-        } else {
-          throw std::runtime_error("bad input");
-        }
-        package_file.close();
-        break;
       case 6:
         std::cout << "size = " << package_manager.size() << std::endl;
         break;
+#ifdef SKIP
       case 7:
         package_manager.global_update();
         break;
-
+#endif
       case 9:
         break;
 
@@ -175,33 +113,21 @@ int main() {
         std::cout << option << "is not an option" << std::endl;
         break;
       }
-
-    } while (option != 9);
-  } catch (const std::exception &e) {
-    std::string what(e.what());
-    if (what == "cycle found") {
-      package_manager.cycle_destroy(package);
     }
-    std::cerr << "Error: " << e.what() << std::endl;
 
-    return 1;
-  }
-  std::cout
-      << "Enter backup file_name\n If you dont want storing  backup, Enter"
-      << std::endl;
-  std::string b_file_name = my_readline(std::cin);
+    catch (const std::exception &e) {
+      std::string what(e.what());
+      if (what == "cycle found") {
+        package_manager.cycle_destroy(package);
+        std::cout << "Cycle is destroed" << std::endl;
+      }
+      if (what == "EOF") {
+        std::cout << "EOF, exit........." << std::endl;
+        return 1;
+      }
+      std::cerr << "Error: " << e.what() << std::endl;
+    }
+  } while (option != 9);
 
-  std::ofstream output_file(b_file_name);
-
-  if (!output_file.is_open()) {
-    std::cerr << "Fail backup\n";
-    return 1;
-  }
-
-  controler.write_mananger(package_manager, output_file);
-  output_file.close();
   return 0;
 }
-#endif
-
-int main() { return 0; }

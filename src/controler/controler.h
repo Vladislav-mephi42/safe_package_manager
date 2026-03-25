@@ -1,19 +1,12 @@
-
+#ifndef CONTROLER
+#define CONTROLER
 #include "controler/strategy.h"
 #include "package/package.h"
 #include "package_manager/package_manager.h"
+#include <fstream>
 #include <nlohmann/json.hpp>
 #include <vector>
-
-// Controler get a package name from view. Than it start analizing embedded
-// repositories and check availability of package. If this package is availible,
-// controler parse it and do three actions -> 1) add package in json data_base
-// 2) add package to Package_manager
-
-//+ method add() of package will execute buils.sh skript, which will install
-// this ytilty an add it to path
-
-// View will work with user and get file_name, flags
+using json = nlohmann::json;
 
 class Controler {
 private:
@@ -21,7 +14,26 @@ private:
 
   std::vector<std::string> json_repozitories_names;
   std::string storage_file_name;
-  Package_manager *pm;
+  Package_manager *pm = nullptr;
+  void correct_json(const std::string &file_name) {
+
+    std::ifstream file(file_name);
+    if (!file.is_open()) {
+      throw std::runtime_error("bad json file");
+    }
+    json data;
+    try {
+      file >> data;
+    } catch (...) {
+      throw std::runtime_error("parsing error");
+    }
+    if (!data.contains("packages")) {
+      throw std::runtime_error("bad json file");
+    }
+    if (!data["packages"].is_array()) {
+      throw std::runtime_error("bad json file");
+    }
+  }
 
 public:
   Controler() : storage_file_name("default.json") {
@@ -39,12 +51,17 @@ public:
             std::string storage_file_name, Package_manager *pm)
       : json_repozitories_names(json_repositories_names),
         storage_file_name(storage_file_name), pm(pm) {
+    correct_json(storage_file_name);
+    for (const auto &elem : json_repositories_names) {
+      correct_json(elem);
+    }
     Empty_with_main_read empty;
     Support_read support;
     Main_read main;
     strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
     strategies.push_back(std::make_shared<Support_read>(support));
     strategies.push_back(std::make_shared<Main_read>(main));
+    write_package_manager_to_file(storage_file_name, *pm);
   }
 
   const std::vector<std::string> &get_json_repozitories_names() const noexcept {
@@ -95,3 +112,4 @@ public:
     return pm->find(file_name);
   }
 };
+#endif
