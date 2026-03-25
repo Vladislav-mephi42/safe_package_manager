@@ -885,6 +885,15 @@ TEST_CASE("Controler main purpose test") {
     build_manager_ms(pm, 3, 3, 3);
     REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
     Controler controler;
+    std::ofstream file_1("repozitory_1.json");
+    std::ofstream file_2("repozitory_2.json");
+    json data;
+    data["packages"] = json::array();
+    file_1 << data;
+    file_2 << data;
+    file_1.close();
+    file_2.close();
+
     REQUIRE_NOTHROW(controler =
                         Controler({"repozitory_1.json", "repozitory_2.json"},
                                   "storage.json", &pm));
@@ -895,14 +904,6 @@ TEST_CASE("Controler main purpose test") {
     Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
-    std::ofstream file_1("repozitory_1.json");
-    std::ofstream file_2("repozitory_2.json");
-    json data;
-    data["packages"] = json::array();
-    file_1 << data;
-    file_2 << data;
-    file_1.close();
-    file_2.close();
 
     controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
                                     "repozitory_2.json");
