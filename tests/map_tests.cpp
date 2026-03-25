@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 
 #include "map/map.h"
-#include <catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <string>
 #include <utility>
 

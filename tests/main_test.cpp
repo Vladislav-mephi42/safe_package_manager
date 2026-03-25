@@ -5,9 +5,10 @@
 #include "package/package.h"
 #include "package/support_package.h"
 #include "package_manager/package_manager.h"
-#include <catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <cmath>
 
+#include <fstream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -240,7 +241,7 @@ TEST_CASE("Empty_package") {
         "default.dep", std::make_shared<Main_package>(main_other));
     REQUIRE_THROWS(
         package.insert_connected(std::make_shared<Empty_package>(other)));
-    REQUIRE(package.get_connected_packages().size() == 0);
+    REQUIRE_THROWS(package.get_connected_packages());
     REQUIRE_THROWS(package.erase_connected(other));
 
     Main_package main_package;
@@ -660,5 +661,262 @@ TEST_CASE("Package  manager (advanced checks)") {
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_2)));
     REQUIRE(pm.size() == 1);
+  }
+}
+
+TEST_CASE("Controler") {
+#ifdef SKIP_THIS_BLOCK
+  SECTION("Packages methods that are needed to controler") {
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package other;
+    std::stringstream stream;
+    pkg.write(stream);
+    other.read(stream);
+    bool flag = (pkg == other); // fix catch error
+    REQUIRE(flag);
+  }
+#endif
+
+  SECTION("read package from json(Main package)") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package req_pkg_1(package_names[1], "batman", "123456", "12344",
+                           empty);
+    Main_package req_pkg_2(package_names[2], "batman", "123456", "12344",
+                           empty);
+    pkg.insert_connected(std::make_shared<Main_package>(req_pkg_1));
+    pkg.insert_connected(std::make_shared<Main_package>(req_pkg_2));
+    Main_package other(package_names[3], "batman", "123456", "12344", empty);
+
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+
+    for (const auto &elem : pkg.get_connected_packages()) {
+      std::stringstream out_1;
+      json tmp_1;
+      elem->write(out_1);
+      tmp_1 = json::parse(out_1.str());
+      data["packages"].push_back(tmp_1);
+    }
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Main_package>(pkg);
+    auto new_req = new_pkg->get_connected_packages();
+
+    auto old_req = old_pkg->get_connected_packages();
+
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
+
+  SECTION("read package from json(Support package)") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Support_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Support_package other(package_names[1], "batman", "123456", "12344", empty);
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Support_package>(pkg);
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
+  SECTION("read package from json(Empty package)") {
+    json data;
+    data["packages"] = json::array();
+    std::vector<std::shared_ptr<Package>> empty;
+    Main_package main_pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package main_other(package_names[1], "batman", "123456", "12344",
+                            empty);
+    Empty_package pkg(package_names[0],
+                      std::make_shared<Main_package>(main_pkg));
+    Empty_package other(package_names[1],
+                        std::make_shared<Main_package>(main_other));
+    std::stringstream out_1;
+    json tmp_1;
+    pkg.write(out_1);
+    tmp_1 = json::parse(out_1.str());
+    data["packages"].push_back(tmp_1);
+    std::stringstream out_2;
+    json tmp_2;
+    other.write(out_2);
+    tmp_2 = json::parse(out_2.str());
+    data["packages"].push_back(tmp_2);
+    Controler controler;
+    auto new_pkg = controler.read_package(package_names[0], data);
+    auto old_pkg = std::make_shared<Empty_package>(pkg);
+    bool check = (*(new_pkg.get()) == pkg);
+    REQUIRE(check);
+  }
+  SECTION("Write/read package manager to file MM") {
+    Package_manager pm_1;
+    Package_manager pm_2;
+    build_manager_mm(pm_1, 3, 3, 2);
+
+    Controler controler;
+    controler.write_package_manager_to_file("test_file_1.json", pm_1);
+    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    REQUIRE(pm_1.size() == pm_2.size());
+    int total_packages = compute_total_packages(3, 3, 2);
+    auto package_names = generate_names(total_packages);
+    for (const auto &elem : package_names) {
+      REQUIRE(pm_1.find(elem));
+      REQUIRE(pm_2.find(elem));
+    }
+  }
+  SECTION("Write/read package manager to file MS") {
+    Package_manager pm_1;
+    Package_manager pm_2;
+    build_manager_ms(pm_1, 3, 3, 2);
+
+    Controler controler;
+    controler.write_package_manager_to_file("test_file_1.json", pm_1);
+    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    REQUIRE(pm_1.size() == pm_2.size());
+    int total_packages = compute_total_packages(3, 3, 2);
+    auto package_names = generate_names(total_packages);
+    for (const auto &elem : package_names) {
+      REQUIRE(pm_1.find(elem));
+      REQUIRE(pm_2.find(elem));
+    }
+  }
+  SECTION("Write/read package manager to file MS") {
+    Package_manager pm_1;
+    Package_manager pm_2;
+    build_manager_me(pm_1, 3, 3, 2);
+
+    Controler controler;
+    controler.write_package_manager_to_file("test_file_1.json", pm_1);
+    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    REQUIRE(pm_1.size() == pm_2.size());
+    int total_packages = compute_total_packages(3, 3, 2);
+    auto package_names = generate_names(total_packages);
+    for (const auto &elem : package_names) {
+      REQUIRE(pm_1.find(elem));
+      REQUIRE(pm_2.find(elem));
+    }
+  }
+  SECTION("Write/read package to file") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    Controler controler;
+    controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
+                                    "test_file_2.json");
+    auto result =
+        controler.read_package_from_file(package_names[0], "test_file_2.json");
+    REQUIRE(*result.get() == pkg_1);
+  }
+  SECTION("write package to file(cycle error)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1_tmp(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2_tmp(package_names[1], "batman", "123456", "12344",
+                              {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3_tmp(package_names[3],
+                            std::make_shared<Main_package>(tmp));
+    auto pkg_1 = std::make_shared<Main_package>(pkg_1_tmp);
+    auto pkg_2 = std::make_shared<Support_package>(pkg_2_tmp);
+    auto pkg_3 = std::make_shared<Empty_package>(pkg_3_tmp);
+    pkg_2->insert_connected(pkg_1);
+    pkg_1->insert_connected(pkg_2);
+    pkg_1->insert_connected(pkg_3);
+    Controler controler;
+    REQUIRE_THROWS(controler.write_package_to_file(pkg_1, "test_file_2.json"));
+  }
+  SECTION("write package from file(super bad format)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_2.insert_connected(std::make_shared<Main_package>(pkg_1));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    Controler controler;
+    REQUIRE_THROWS(controler.write_package_to_file(
+        std::make_shared<Main_package>(pkg_1), "test_file_2.json"));
+  }
+}
+
+TEST_CASE("Controler main purpose test") {
+  SECTION("Add/Remove") {
+    Package_manager pm;
+    build_manager_ms(pm, 3, 3, 3);
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
+    Controler controler;
+    std::ofstream file_1("repozitory_1.json");
+    std::ofstream file_2("repozitory_2.json");
+    json data;
+    data["packages"] = json::array();
+    file_1 << data;
+    file_2 << data;
+    file_1.close();
+    file_2.close();
+
+    REQUIRE_NOTHROW(controler =
+                        Controler({"repozitory_1.json", "repozitory_2.json"},
+                                  "storage.json", &pm));
+
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+
+    controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
+                                    "repozitory_2.json");
+    REQUIRE_NOTHROW(controler.add_package(pkg_2.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
+    REQUIRE_NOTHROW(controler.add_package(pkg_3.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 2);
+    REQUIRE_NOTHROW(controler.add_package(pkg_1.get_file_name()));
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 3);
+    REQUIRE_THROWS(controler.remove_package(pkg_3.get_file_name()));
+    controler.remove_package(pkg_1.get_file_name());
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
+    controler.remove_package(pkg_3.get_file_name());
+    REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
   }
 }

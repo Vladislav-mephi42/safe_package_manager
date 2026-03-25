@@ -1,9 +1,12 @@
 #include "package/support_package.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
 #include <unordered_set>
 #include <vector>
+
+using json = nlohmann::json;
 
 void Support_package::add() {
   if (!condition) {
@@ -14,18 +17,37 @@ void Support_package::add() {
 void Support_package::remove() { condition = false; }
 
 std::ostream &Support_package::write(std::ostream &out) {
-  out << "support" << "\n";
-  out << 0 << "\n";
-  out << file_name << "\n";
-  out << publisher_name << "\n";
-  out << current_version << "\n";
-  out << last_version << "\n";
-  out << req_packages.size() << "\n";
-  for (const std::shared_ptr<Package> &package : req_packages) {
-    package->write(out);
+  json j;
+  j["type"] = "support";
+  j["using_flag"] = using_flag;
+  j["file_name"] = file_name;
+  j["publisher_name"] = publisher_name;
+  j["current_version"] = current_version;
+  j["last_version"] = last_version;
+  j["req_packages"] = json::array();
+  for (const auto &pkg : req_packages) {
+    j["req_packages"].push_back(pkg->get_file_name());
   }
+  out << j;
   return out;
 }
+
+json Support_package::write_to_json() const {
+  json j;
+  j["type"] = "support";
+  j["using_flag"] = using_flag;
+  j["file_name"] = file_name;
+  j["publisher_name"] = publisher_name;
+  j["current_version"] = current_version;
+  j["last_version"] = last_version;
+  j["req_packages"] = json::array();
+  for (const auto &pkg : req_packages) {
+    j["req_packages"].push_back(pkg->get_file_name());
+  }
+
+  return j;
+}
+
 int read_int(std::istream &in);
 std::string my_readline(std::istream &in);
 std::istream &
@@ -33,51 +55,6 @@ read_req_packages(std::istream &in,
                   std::vector<std::shared_ptr<Package>> &req_packages,
                   std::vector<std::shared_ptr<Read_strategy>> &strategies,
                   int req_packages_count);
-
-std::istream &
-Support_package::read(std::istream &in,
-                      std::vector<std::shared_ptr<Read_strategy>> &strategies) {
-  if (!in) {
-    return in;
-  }
-  read_int(in); // read using flag, which is unsused in support package
-
-  if (!in) {
-    return in;
-  }
-  std::string file_name = my_readline(in);
-  if (!in) {
-    return in;
-  }
-
-  std::string publisher_name = my_readline(in);
-  if (!in) {
-    return in;
-  }
-
-  std::string current_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  std::string last_version = my_readline(in);
-  if (!in) {
-    return in;
-  }
-  int req_packages_count = read_int(in);
-  if (!in) {
-    return in;
-  }
-  std::vector<std::shared_ptr<Package>> tmp_req_packages(req_packages_count);
-
-  read_req_packages(in, tmp_req_packages, strategies, req_packages_count);
-  set_file_name(file_name);
-  set_publisher_name(publisher_name);
-  set_current_version(current_version);
-  set_last_version(last_version);
-  req_packages = tmp_req_packages;
-
-  return in;
-}
 
 std::string devide_name(const std::string &filename, unsigned int part_number) {
   const std::string suffix = ".dep";

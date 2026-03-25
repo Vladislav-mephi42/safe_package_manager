@@ -1,12 +1,16 @@
 #ifndef EMPTY_PACKAGE
 #define EMPTY_PACKAGE
 
+#include "package/main_package.h"
 #include "package/package.h"
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+using json = nlohmann::json;
 
 class Empty_package : public Package {
 private:
@@ -112,11 +116,10 @@ public:
     linked_package->set_current_version(new_version);
   }
 
-  std::vector<std::shared_ptr<Package>>
-  get_connected_packages() const noexcept override {
+  const std::vector<std::shared_ptr<Package>> &
+  get_connected_packages() const override {
     if (!linked_package) {
-      std::vector<std::shared_ptr<Package>> empty;
-      return empty;
+      throw std::runtime_error("No linked package");
     }
     return linked_package->get_connected_packages();
   }
@@ -162,13 +165,11 @@ public:
   }
 
   std::ostream &write(std::ostream &out) override;
-  std::istream &
-  read(std::istream &in,
-       std::vector<std::shared_ptr<Read_strategy>> &strategies) override;
 
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Empty_package>(*this);
   }
+  json write_to_json() const override;
 };
 
 #endif

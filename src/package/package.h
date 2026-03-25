@@ -2,8 +2,11 @@
 #define PACKAGE_H
 
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+
+using json = nlohmann::json;
 
 class Read_strategy;
 
@@ -22,17 +25,15 @@ public:
   virtual void set_publisher_name(const std::string &new_publisher_name) = 0;
   virtual void set_current_version(const std::string &new_version) = 0;
   virtual void set_last_version(const std::string &new_version) = 0;
-  virtual std::vector<std::shared_ptr<Package>>
-  get_connected_packages() const noexcept = 0;
+  virtual const std::vector<std::shared_ptr<Package>> &
+  get_connected_packages() const = 0;
   virtual bool insert_connected(const std::shared_ptr<Package> &package) = 0;
   virtual bool erase_connected(const Package &package) = 0;
   virtual bool operator==(const Package &) const = 0;
   virtual bool get_using_flag() const noexcept = 0;
   virtual void set_using_flag(bool new_using_flag) = 0;
   virtual std::ostream &write(std::ostream &out) = 0;
-  virtual std::istream &
-  read(std::istream &in,
-       std::vector<std::shared_ptr<Read_strategy>> &strategies) = 0;
+  virtual json write_to_json() const = 0;
   virtual std::shared_ptr<Package> clone() const = 0;
 };
 

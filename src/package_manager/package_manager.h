@@ -23,7 +23,7 @@ public:
   }
   Package_manager() = default;
   ~Package_manager() = default;
-  void add(std::shared_ptr<Package> package, bool main_flag = true,
+  void add(const std::shared_ptr<Package> &package, bool main_flag = true,
            bool cycle_destroy_flag = true);
   void remove(const std::shared_ptr<Package> &package);
   void remove(const std::string &package_name);

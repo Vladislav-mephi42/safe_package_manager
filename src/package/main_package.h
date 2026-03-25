@@ -2,14 +2,14 @@
 #define MAIN_PACKAGE
 
 #include "package/package.h"
-#include "package/support_package.h"
-
 #include <algorithm>
 #include <memory>
 
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
+using json = nlohmann::json;
 
 class Main_package : public Package {
 private:
@@ -41,6 +41,10 @@ public:
         current_version(current_version), last_version(last_version),
         req_packages(req_packages) {
     correct();
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
   }
 
   Main_package(const Main_package &other)
@@ -105,8 +109,8 @@ public:
     }
     last_version = new_version;
   }
-  std::vector<std::shared_ptr<Package>>
-  get_connected_packages() const noexcept override {
+  const std::vector<std::shared_ptr<Package>> &
+  get_connected_packages() const override {
     return req_packages;
   }
 
@@ -121,6 +125,10 @@ public:
       return false;
     }
     req_packages.push_back(package);
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
     return true;
   }
 
@@ -143,7 +151,17 @@ public:
     auto other_t =
         std::make_tuple(o.get_current_version(), o.get_last_version(),
                         o.get_publisher_name(), o.get_file_name());
-    return this_t == other_t;
+    if (this_t != other_t ||
+        req_packages.size() != (o.get_connected_packages()).size()) {
+      return false;
+    }
+    for (int i = 0; i < req_packages.size(); i++) {
+      if (*(req_packages[i].get()) !=
+          *(((o.get_connected_packages())[i]).get())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   bool get_using_flag() const noexcept override { return using_flag; }
@@ -154,13 +172,10 @@ public:
 
   std::ostream &write(std::ostream &out) override;
 
-  std::istream &
-  read(std::istream &in,
-       std::vector<std::shared_ptr<Read_strategy>> &strategies) override;
-
   std::shared_ptr<Package> clone() const override {
     return std::make_shared<Main_package>(*this);
   }
+  json write_to_json() const override;
 };
 
 #endif
