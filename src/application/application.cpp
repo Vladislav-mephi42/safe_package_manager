@@ -86,26 +86,33 @@ int main() {
       case 3:
         std::cout << "print package name -->" << std::flush;
         package_name = View::readline(std::cin);
+
+        std::cout << "========================================================"
+                  << std::endl;
+        std::cout << "====================PACKAGE INFO========================"
+                  << std::endl;
         if (package_manager.find(package_name, std::cout)) {
-          std::cout << "This pakage exist" << std::endl;
+          std::cout << "======================================================"
+                    << std::endl;
           break;
         }
         std::cout << "This pakage did not exist" << std::endl;
+        std::cout << "========================================================"
+                  << std::endl;
         break;
-#ifdef SKIP
+
       case 4:
         controler.remove_unuse();
         break;
-#endif
 
       case 6:
         std::cout << "size = " << package_manager.size() << std::endl;
         break;
-#ifdef SKIP
+
       case 7:
-        package_manager.global_update();
+        controler.global_update();
         break;
-#endif
+
       case 9:
         break;
 
