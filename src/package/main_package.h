@@ -13,6 +13,7 @@ using json = nlohmann::json;
 
 class Main_package : public Package {
 private:
+  std::string package_name;
   std::string file_name;
   std::string publisher_name;
   std::string current_version;
@@ -33,7 +34,8 @@ private:
   }
 
 public:
-  Main_package(const std::string &file_name, const std::string &publisher_name,
+  Main_package(const std::string &package_name, const std::string &file_name,
+               const std::string &publisher_name,
                const std::string &current_version,
                const std::string &last_version,
                const std::vector<std::shared_ptr<Package>> &req_packages)
@@ -41,6 +43,21 @@ public:
         current_version(current_version), last_version(last_version),
         req_packages(req_packages) {
     correct();
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
+  }
+  Main_package(const std::string &file_name, const std::string &publisher_name,
+               const std::string &current_version,
+               const std::string &last_version,
+               const std::vector<std::shared_ptr<Package>> &req_packages)
+      : file_name(file_name), publisher_name(publisher_name),
+        current_version(current_version), last_version(last_version),
+        req_packages(req_packages) {
+
+    correct();
+    package_name = file_name.substr(0, file_name.length() - 4);
     std::sort(this->req_packages.begin(), this->req_packages.end(),
               [](const auto &a, const auto &b) {
                 return a->get_file_name() < b->get_file_name();
@@ -78,6 +95,15 @@ public:
   std::string get_last_version() const noexcept override {
     return last_version;
   };
+  std::string get_package_name() const noexcept override {
+    return package_name;
+  }
+  void set_package_name(const std::string &new_prog_name) {
+    if (new_prog_name == "") {
+      throw std::runtime_error("bad new prog name");
+    }
+    package_name = new_prog_name;
+  }
 
   void set_file_name(const std::string &new_file_name) override {
     if (new_file_name.length() < 5) {

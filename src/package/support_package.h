@@ -17,6 +17,7 @@ class Main_package;
 
 class Support_package : public Package {
 private:
+  std::string package_name;
   std::string file_name;
   std::string publisher_name;
   std::string current_version;
@@ -92,7 +93,15 @@ public:
   std::string get_last_version() const noexcept override {
     return last_version;
   };
-
+  std::string get_package_name() const noexcept override {
+    return package_name;
+  }
+  void set_package_name(const std::string &new_package_name) {
+    if (new_package_name == "") {
+      throw std::runtime_error("bad new prog name");
+    }
+    package_name = new_package_name;
+  }
   void set_file_name(const std::string &new_file_name) override {
     if (new_file_name.length() < 5) {
       throw std::invalid_argument("invalid file_name");

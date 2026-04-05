@@ -26,7 +26,7 @@ std::ostream &Empty_package::write(std::ostream &out) {
   linked["linked_file_name"] = linked_file_name;
 
   linked["type"] = "empty";
-  linked["file_name"] = file_name;
+  linked["file_name"] = get_file_name();
   out << linked.dump(4);
   return out;
 }
@@ -45,7 +45,7 @@ json Empty_package::write_to_json() const {
   linked["linked_file_name"] = linked_file_name;
 
   linked["type"] = "empty";
-  linked["file_name"] = file_name;
+  linked["file_name"] = get_file_name();
 
   return linked;
 }
