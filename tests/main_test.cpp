@@ -373,7 +373,7 @@ void build_manager_me(Package_manager &pm, int root_count, int depth,
     for (const auto &parent : current_level) {
       for (int b = 0; b < branching; ++b) {
         auto child_main = std::make_shared<Main_package>(
-            Main_package("", package_names[name_index++], "vlad", "2.1", "2.1",
+            Main_package(package_names[name_index++], "vlad", "2.1", "2.1",
                          std::vector<std::shared_ptr<Package>>{}));
         auto child = std::make_shared<Empty_package>(
             child_main->get_file_name(), child_main);
@@ -704,10 +704,10 @@ TEST_CASE("Controler") {
     json data;
     data["packages"] = json::array();
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg("", package_names[0], "batman", "123456", "12344", empty);
-    Main_package req_pkg_1("", package_names[1], "batman", "123456", "12344",
+    Main_package pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package req_pkg_1(package_names[1], "batman", "123456", "12344",
                            empty);
-    Main_package req_pkg_2("", package_names[2], "batman", "123456", "12344",
+    Main_package req_pkg_2(package_names[2], "batman", "123456", "12344",
                            empty);
     pkg.insert_connected(std::make_shared<Main_package>(req_pkg_1));
     pkg.insert_connected(std::make_shared<Main_package>(req_pkg_2));
@@ -769,9 +769,8 @@ TEST_CASE("Controler") {
     json data;
     data["packages"] = json::array();
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package main_pkg("", package_names[0], "batman", "123456", "12344",
-                          empty);
-    Main_package main_other("", package_names[1], "batman", "123456", "12344",
+    Main_package main_pkg(package_names[0], "batman", "123456", "12344", empty);
+    Main_package main_other(package_names[1], "batman", "123456", "12344",
                             empty);
     Empty_package pkg(package_names[0],
                       std::make_shared<Main_package>(main_pkg));
@@ -848,9 +847,9 @@ TEST_CASE("Controler") {
     file << data;
     file.close();
 
-    Main_package pkg_1("", package_names[0], "batman", "123456", "12344", {});
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
-    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
     Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -924,9 +923,9 @@ TEST_CASE("Controler main purpose test") {
                         Controler({"repozitory_1.json", "repozitory_2.json"},
                                   "storage.json", &pm));
 
-    Main_package pkg_1("", package_names[0], "batman", "123456", "12344", {});
+    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
-    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
+    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
     Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
