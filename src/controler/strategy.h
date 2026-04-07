@@ -25,16 +25,18 @@ public:
 
   std::shared_ptr<Package> read(json data,
                                 json *req_packages_names) const override {
-    bool check =
-        data.contains("file_name") && data.contains("publisher_name") &&
-        data.contains("using_flag") && data.contains("current_version") &&
-        data.contains("last_version") && data.contains("req_packages");
+    bool check = data.contains("file_name") && data.contains("package_name") &&
+                 data.contains("publisher_name") &&
+                 data.contains("using_flag") &&
+                 data.contains("current_version") &&
+                 data.contains("last_version") && data.contains("req_packages");
     if (!check) {
       throw std::runtime_error("deserealization error");
     }
     Main_package tmp;
     std::shared_ptr<Package> package = std::make_shared<Main_package>(tmp);
     package->set_file_name(data["file_name"]);
+    package->set_package_name(data["package_name"]);
     package->set_publisher_name(data["publisher_name"]);
     package->set_using_flag(data["using_flag"]);
     package->set_current_version(data["current_version"]);
@@ -52,15 +54,17 @@ public:
 
   std::shared_ptr<Package> read(json data,
                                 json *req_packages_names) const override {
-    bool check =
-        data.contains("file_name") && data.contains("publisher_name") &&
-        data.contains("using_flag") && data.contains("current_version") &&
-        data.contains("last_version") && data.contains("req_packages");
+    bool check = data.contains("file_name") && data.contains("package_name") &&
+                 data.contains("publisher_name") &&
+                 data.contains("using_flag") &&
+                 data.contains("current_version") &&
+                 data.contains("last_version") && data.contains("req_packages");
     if (!check) {
       throw std::runtime_error("deserealization error");
     }
     Support_package tmp;
     std::shared_ptr<Package> package = std::make_shared<Support_package>(tmp);
+    package->set_package_name(data["package_name"]);
     package->set_file_name(data["file_name"]);
     package->set_publisher_name(data["publisher_name"]);
     package->set_using_flag(data["using_flag"]);
@@ -81,22 +85,27 @@ public:
                                 json *req_packages_names) const override
 
   {
-    bool check =
-        data.contains("file_name") && data.contains("publisher_name") &&
-        data.contains("using_flag") && data.contains("current_version") &&
-        data.contains("last_version") && data.contains("req_packages");
+    bool check = data.contains("file_name") && data.contains("package_name") &&
+                 data.contains("publisher_name") &&
+                 data.contains("using_flag") &&
+                 data.contains("current_version") &&
+                 data.contains("last_version") && data.contains("req_packages");
     if (!check) {
+      throw std::runtime_error("deserealization error");
+    }
+    if (data["linked_type"] != "main") {
       throw std::runtime_error("deserealization error");
     }
     Main_package tmp;
     std::shared_ptr<Package> package = std::make_shared<Main_package>(tmp);
-    package->set_file_name(data["linked_file_name"]);
+    package->set_file_name(data["file_name"]);
+    package->set_package_name(data["linked_package_name"]);
     package->set_publisher_name(data["publisher_name"]);
     package->set_using_flag(data["using_flag"]);
     package->set_current_version(data["current_version"]);
     package->set_last_version(data["last_version"]);
     *req_packages_names = data["req_packages"];
-    Empty_package empty_package(data["file_name"], package);
+    Empty_package empty_package(data["package_name"], package);
     return std::make_shared<Empty_package>(empty_package);
   }
 };
