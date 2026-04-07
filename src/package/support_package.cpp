@@ -21,6 +21,7 @@ std::ostream &Support_package::write(std::ostream &out) {
   j["type"] = "support";
   j["using_flag"] = using_flag;
   j["file_name"] = file_name;
+  j["package_name"] = package_name;
   j["publisher_name"] = publisher_name;
   j["current_version"] = current_version;
   j["last_version"] = last_version;
@@ -37,6 +38,7 @@ json Support_package::write_to_json() const {
   j["type"] = "support";
   j["using_flag"] = using_flag;
   j["file_name"] = file_name;
+  j["package_name"] = package_name;
   j["publisher_name"] = publisher_name;
   j["current_version"] = current_version;
   j["last_version"] = last_version;

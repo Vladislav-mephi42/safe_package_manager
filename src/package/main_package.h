@@ -65,11 +65,13 @@ public:
   }
 
   Main_package(const Main_package &other)
-      : file_name(other.file_name), publisher_name(other.publisher_name),
+      : package_name(other.package_name), file_name(other.file_name),
+        publisher_name(other.publisher_name),
         current_version(other.current_version),
         last_version(other.last_version), req_packages(other.req_packages) {}
   Main_package &operator=(const Main_package &other) {
     if (this != &other) {
+      package_name = other.package_name;
       file_name = other.file_name;
       publisher_name = other.publisher_name;
       current_version = other.current_version;

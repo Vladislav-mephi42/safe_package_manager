@@ -10,8 +10,10 @@
 #include <string>
 #include <vector>
 
+// package_name will be ......-latest
+// it's tells controler that you want find and install -latest version of
+// package-name without latest package, if it will find it
 using json = nlohmann::json;
-
 class Empty_package : public Package {
 private:
   bool condition = false;
@@ -77,9 +79,9 @@ public:
     return package_name;
   }
   void set_package_name(const std::string &new_package_name) {
-    if (new_package_name == "") {
-      throw std::runtime_error("bad new prog name");
-    }
+    // if (new_package_name == "") {
+    //   throw std::runtime_error("bad new prog name");
+    // }
     package_name = new_package_name;
   }
   void set_file_name(const std::string &new_file_name) override {

@@ -15,18 +15,17 @@ void Empty_package::remove() { condition = false; }
 std::ostream &Empty_package::write(std::ostream &out) {
 
   std::stringstream sstr;
-
   linked_package->write(sstr);
   json linked = json::parse(sstr.str());
 
   std::string linked_type = linked["type"];
+
   linked["linked_type"] = linked_type;
+  std::string linked_package_name = linked["package_name"];
 
-  std::string linked_file_name = linked["file_name"];
-  linked["linked_file_name"] = linked_file_name;
-
+  linked["linked_package_name"] = linked_package_name;
   linked["type"] = "empty";
-  linked["file_name"] = get_file_name();
+  linked["package_name"] = get_package_name();
   out << linked.dump(4);
   return out;
 }
@@ -41,11 +40,11 @@ json Empty_package::write_to_json() const {
   std::string linked_type = linked["type"];
   linked["linked_type"] = linked_type;
 
-  std::string linked_file_name = linked["file_name"];
-  linked["linked_file_name"] = linked_file_name;
+  std::string linked_package_name = linked["package_name"];
+  linked["linked_package_name"] = linked_package_name;
 
   linked["type"] = "empty";
-  linked["file_name"] = get_file_name();
+  linked["package_name"] = get_package_name();
 
   return linked;
 }

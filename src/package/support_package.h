@@ -39,6 +39,20 @@ private:
   }
 
 public:
+  Support_package(const std::string &package_name, const std::string &file_name,
+                  const std::string &publisher_name,
+                  const std::string &current_version,
+                  const std::string &last_version,
+                  const std::vector<std::shared_ptr<Package>> &req_packages)
+      : package_name(package_name), file_name(file_name),
+        publisher_name(publisher_name), current_version(current_version),
+        last_version(last_version), req_packages(req_packages) {
+    correct();
+    std::sort(this->req_packages.begin(), this->req_packages.end(),
+              [](const auto &a, const auto &b) {
+                return a->get_file_name() < b->get_file_name();
+              });
+  }
   Support_package(const std::string &file_name,
                   const std::string &publisher_name,
                   const std::string &current_version,
@@ -48,30 +62,33 @@ public:
         current_version(current_version), last_version(last_version),
         req_packages(req_packages) {
     correct();
+    package_name = file_name.substr(0, file_name.length() - 4);
     std::sort(this->req_packages.begin(), this->req_packages.end(),
               [](const auto &a, const auto &b) {
                 return a->get_file_name() < b->get_file_name();
               });
   }
-
-  Support_package(std::string &&file_name, std::string &&publisher_name,
-                  std::string &&current_version, std::string &&last_version,
-                  std::vector<std::shared_ptr<Package>> &&req_packages)
-      : file_name(std::move(file_name)),
-        publisher_name(std::move(publisher_name)),
-        current_version(std::move(current_version)),
-        last_version(std::move(last_version)),
-        req_packages(std::move(req_packages)) {
-    correct();
-    std::sort(this->req_packages.begin(), this->req_packages.end(),
-              [](const auto &a, const auto &b) {
-                return a->get_file_name() < b->get_file_name();
-              });
+  Support_package(const Support_package &other)
+      : package_name(other.package_name), file_name(other.file_name),
+        publisher_name(other.publisher_name),
+        current_version(other.current_version),
+        last_version(other.last_version), req_packages(other.req_packages) {}
+  Support_package &operator=(const Support_package &other) {
+    if (this != &other) {
+      package_name = other.package_name;
+      file_name = other.file_name;
+      publisher_name = other.publisher_name;
+      current_version = other.current_version;
+      last_version = other.last_version;
+      req_packages = other.req_packages;
+    }
+    return *this;
   }
 
   Support_package()
-      : file_name("default.dep"), publisher_name("default"),
-        current_version("default"), last_version("default") {}
+      : package_name("default"), file_name("default.dep"),
+        publisher_name("default"), current_version("default"),
+        last_version("default") {}
 
   ~Support_package() override = default;
 
