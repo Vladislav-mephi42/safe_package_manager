@@ -44,6 +44,7 @@ set(LOGIC_SOURCES
     ${SRC}/package/support_package.cpp
     ${SRC}/package/empty_package.cpp
     ${SRC}/controler/controler.cpp
+    ${SRC}/controler/strategy.cpp
     ${SRC}/package_manager/package_manager.cpp
 )
 
