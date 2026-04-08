@@ -945,3 +945,142 @@ TEST_CASE("Controler main purpose test") {
     REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
   }
 }
+
+TEST_CASE("Controler empty packages") {
+  SECTION("Basic 1") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 3, 3, 3);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "1", "1", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+    Empty_package empty_package("python_super_package-last",
+                                std::make_shared<Main_package>(linked_package));
+
+    controler.write_package_to_file(
+        std::make_shared<Empty_package>(empty_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    auto result = controler.read_package("python_super_package-last", data);
+    REQUIRE(result->get_file_name() == better_package.get_file_name());
+    REQUIRE(result->get_publisher_name() ==
+            better_package.get_publisher_name());
+    REQUIRE(result->get_current_version() ==
+            better_package.get_current_version());
+    REQUIRE(result->get_package_name() != better_package.get_package_name());
+  }
+  SECTION("Basic 2") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+    Empty_package empty_package("python_super_package-last",
+                                std::make_shared<Main_package>(linked_package));
+
+    controler.write_package_to_file(
+        std::make_shared<Empty_package>(empty_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    auto result = controler.read_package("python_super_package-last", data);
+    REQUIRE(result->get_file_name() == linked_package.get_file_name());
+    REQUIRE(result->get_publisher_name() ==
+            linked_package.get_publisher_name());
+    REQUIRE(result->get_current_version() ==
+            linked_package.get_current_version());
+    REQUIRE(result->get_package_name() != linked_package.get_package_name());
+  }
+  SECTION("basic error(format error)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package-last", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error 1)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error 2)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+}
