@@ -10,49 +10,45 @@
 #include <string>
 #include <vector>
 
+// package_name will be ......-latest
+// it's tells controler that you want find and install -latest version of
+// package-name without latest package, if it will find it
 using json = nlohmann::json;
-
 class Empty_package : public Package {
 private:
   bool condition = false;
 
-  std::string file_name;
-
+  std::string package_name;
   std::shared_ptr<Package> linked_package;
-  void correct() {
-
-    if (file_name.length() < 5) {
-      std::cout << file_name.length() << std::endl;
-      throw std::invalid_argument("invalid file_name EMPTY LEN");
-    }
-    if (file_name.substr(file_name.length() - 4) != ".dep") {
-      throw std::invalid_argument("invalid file_name EMPTY DEP");
-    }
-  }
 
 public:
   void add() override;
 
   void remove() override;
-  Empty_package(const std::string &file_name,
+  Empty_package(const std::string &package_name,
                 const std::shared_ptr<Package> &linked_package)
-      : file_name(file_name), linked_package(linked_package) {
-    correct();
-  }
+      : package_name(package_name), linked_package(linked_package) {}
   Empty_package(const Empty_package &other) noexcept
-      : file_name(other.file_name), linked_package(other.linked_package) {}
+      : package_name(other.package_name), linked_package(other.linked_package) {
+  }
+  Empty_package() : package_name("default-last") {}
+
+  ~Empty_package() override = default;
   Empty_package &operator=(const Empty_package &other) noexcept {
     if (this != &other) {
-      file_name = other.file_name;
+      package_name = other.package_name;
       linked_package = other.linked_package;
     }
     return *this;
   }
-  Empty_package() : file_name("default.dep") {}
 
-  ~Empty_package() override = default;
-
-  std::string get_file_name() const noexcept override { return file_name; }
+  std::string get_file_name() const noexcept override {
+    if (!linked_package) {
+      std::string empty;
+      return empty;
+    }
+    return linked_package->get_file_name();
+  }
 
   std::string get_publisher_name() const noexcept override {
     if (!linked_package) {
@@ -79,7 +75,15 @@ public:
     }
     return linked_package->get_last_version();
   };
-
+  std::string get_package_name() const noexcept override {
+    return package_name;
+  }
+  void set_package_name(const std::string &new_package_name) {
+    // if (new_package_name == "") {
+    //   throw std::runtime_error("bad new prog name");
+    // }
+    package_name = new_package_name;
+  }
   void set_file_name(const std::string &new_file_name) override {
     if (new_file_name.length() < 5) {
       throw std::invalid_argument("invalid file_name");
@@ -88,7 +92,10 @@ public:
       throw std::invalid_argument("invalid file_name");
     }
 
-    file_name = new_file_name;
+    if (!linked_package) {
+      throw std::invalid_argument("invalid linked package");
+    }
+    linked_package->set_file_name(new_file_name);
   };
 
   void set_publisher_name(const std::string &new_publisher_name) override {
@@ -142,11 +149,20 @@ public:
     if (dynamic_cast<const Empty_package *>(&o) == nullptr) {
       return false;
     }
-    auto this_t = std::make_tuple(get_current_version(), get_last_version(),
-                                  get_publisher_name(), get_file_name());
-    auto other_t =
-        std::make_tuple(o.get_current_version(), o.get_last_version(),
-                        o.get_publisher_name(), o.get_file_name());
+    auto this_t = std::make_tuple(get_package_name(), get_current_version(),
+                                  get_last_version(), get_publisher_name(),
+                                  get_file_name());
+    auto other_t = std::make_tuple(
+        o.get_package_name(), o.get_current_version(), o.get_last_version(),
+        o.get_publisher_name(), o.get_file_name());
+
+    for (int i = 0; i < this->get_connected_packages().size(); i++) {
+      if (*(this->get_connected_packages()[i].get()) !=
+          *(((o.get_connected_packages())[i]).get())) {
+        return false;
+      }
+    }
+
     return this_t == other_t;
   }
 

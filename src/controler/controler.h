@@ -10,7 +10,8 @@ using json = nlohmann::json;
 
 class Controler {
 private:
-  std::vector<std::shared_ptr<Read_strategy>> strategies;
+  std::vector<std::shared_ptr<Deserialization_strategy>> des_strategies;
+  std::vector<std::shared_ptr<Read_strategy>> read_strategies;
 
   std::vector<std::string> json_repozitories_names;
   std::string storage_file_name;
@@ -40,16 +41,16 @@ public:
     Empty_with_main_read empty;
     Support_read support;
     Main_read main;
-    strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
-    strategies.push_back(std::make_shared<Support_read>(support));
-    strategies.push_back(std::make_shared<Main_read>(main));
+    des_strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
+    des_strategies.push_back(std::make_shared<Support_read>(support));
+    des_strategies.push_back(std::make_shared<Main_read>(main));
+    Default_read default_read;
+    default_read.push_des_strategies(des_strategies);
+    read_strategies.push_back(std::make_shared<Default_read>(default_read));
+    Empty_read empty_read;
+    empty_read.push_des_strategies(des_strategies);
+    read_strategies.push_back(std::make_shared<Empty_read>(empty_read));
   }
-
-  std::shared_ptr<Package> read_package(const std::string &file_name,
-                                        json &data);
-  std::shared_ptr<Package>
-  read_package(const std::string &file_name, json &data,
-               std::vector<std::string> &added_packages);
   Controler(std::vector<std::string> json_repositories_names,
             std::string storage_file_name, Package_manager *pm,
             bool load_from_storage = false)
@@ -62,9 +63,13 @@ public:
     Empty_with_main_read empty;
     Support_read support;
     Main_read main;
-    strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
-    strategies.push_back(std::make_shared<Support_read>(support));
-    strategies.push_back(std::make_shared<Main_read>(main));
+    des_strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
+    des_strategies.push_back(std::make_shared<Support_read>(support));
+    des_strategies.push_back(std::make_shared<Main_read>(main));
+    Default_read read;
+    read.push_des_strategies(des_strategies);
+    read_strategies.push_back(std::make_shared<Default_read>(read));
+
     if (!load_from_storage) {
       write_package_manager_to_file(storage_file_name, *pm);
     } else {
@@ -78,9 +83,9 @@ public:
   const std::string &get_storage_file_name() const noexcept {
     return storage_file_name;
   }
-  const std::vector<std::shared_ptr<Read_strategy>> &
+  const std::vector<std::shared_ptr<Deserialization_strategy>> &
   get_strategies() const noexcept {
-    return strategies;
+    return des_strategies;
   }
 
   void set_json_repozitories_names(
@@ -90,9 +95,10 @@ public:
   void set_storage_file_name(const std::string &new_storage_file_name) {
     storage_file_name = new_storage_file_name;
   }
-  void set_strategies(
-      const std::vector<std::shared_ptr<Read_strategy>> new_strategies) {
-    strategies = new_strategies;
+  void
+  set_strategies(const std::vector<std::shared_ptr<Deserialization_strategy>>
+                     new_strategies) {
+    des_strategies = new_strategies;
   }
 
   std::shared_ptr<Package>
@@ -105,7 +111,11 @@ public:
   void write_package_manager_to_file(const std::string &output_file_name,
                                      Package_manager &pm);
 
-  std::shared_ptr<Package> read_package(json &data, json *req_packages);
+  std::shared_ptr<Package> read_package(const std::string &file_name,
+                                        json &data);
+  std::shared_ptr<Package>
+  read_package(const std::string &file_name, json &data,
+               std::vector<std::string> &added_packages);
 
   static std::ostream &write_package(const std::shared_ptr<Package> &package,
                                      std::ostream &out);
@@ -121,5 +131,7 @@ public:
   }
   void write_package_to_json(const std::shared_ptr<Package> &package,
                              json &data);
+  void remove_unuse();
+  void global_update();
 };
 #endif

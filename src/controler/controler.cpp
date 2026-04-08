@@ -32,9 +32,15 @@ std::string my_readline(std::istream &in) {
   in.setstate(std::ios_base::failbit);
   return "";
 }
-
+/**
+ * @brief find package in json file, return json package
+ *
+ * @param input_file_name
+ * @param package_file_name
+ * @return json
+ */
 json Controler::find_package(const std::string &input_file_name,
-                             const std::string &file_name) {
+                             const std::string &package_file_name) {
   std::ifstream file(input_file_name);
   if (!file.is_open()) {
     throw std::runtime_error("cann`t open file " + input_file_name);
@@ -48,7 +54,8 @@ json Controler::find_package(const std::string &input_file_name,
   }
 
   for (const auto &package : data["packages"]) {
-    if (package.contains("file_name") && package["file_name"] == file_name) {
+    if (package.contains("file_name") &&
+        package["file_name"] == package_file_name) {
       return package;
     }
   }
@@ -56,21 +63,37 @@ json Controler::find_package(const std::string &input_file_name,
   throw std::runtime_error(" package is  not founded");
 }
 
-json Controler::find_package(json &data, const std::string &file_name) {
+/**
+ * @brief find package in json-file, return json-package
+ *
+ * @param data
+ * @param package_file_name
+ * @return json
+ */
+json Controler::find_package(json &data, const std::string &package_file_name) {
 
   if (!data.contains("packages") || !data["packages"].is_array()) {
     throw std::runtime_error("json format error");
   }
 
   for (const auto &package : data["packages"]) {
-    if (package.contains("file_name") && package["file_name"] == file_name) {
+    if (package.contains("file_name") &&
+        package["file_name"] == package_file_name) {
       return package;
     }
   }
   throw std::runtime_error(" package is  not founded");
 }
 
-json Controler::find_package(std::istream &in, const std::string &file_name) {
+/**
+ * @brief find package in std::istream, return json-package
+ *
+ * @param in
+ * @param file_name
+ * @return json
+ */
+json Controler::find_package(std::istream &in,
+                             const std::string &package_file_name) {
 
   json data;
   in >> data;
@@ -80,7 +103,8 @@ json Controler::find_package(std::istream &in, const std::string &file_name) {
   }
 
   for (const auto &package : data["packages"]) {
-    if (package.contains("file_name") && package["file_name"] == file_name) {
+    if (package.contains("file_name") &&
+        package["file_name"] == package_file_name) {
       return package;
     }
   }
@@ -89,49 +113,14 @@ json Controler::find_package(std::istream &in, const std::string &file_name) {
   return json();
 }
 
-std::shared_ptr<Package> Controler::read_package(json &data,
-                                                 json *req_packages) {
-
-  for (const auto &strategy : strategies) {
-    if (strategy->can_read(data["type"])) {
-      return strategy->read(data, req_packages);
-    }
-  }
-  throw std::runtime_error("unknown type of package");
-}
-
-std::shared_ptr<Package>
-Controler::read_package(const std::string &file_name, json &data,
-                        std::vector<std::string> &added_packages) {
-  json package_data = find_package(data, file_name);
-  json req_packages;
-  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
-  auto it = std::find(added_packages.begin(), added_packages.end(),
-                      package->get_file_name());
-  if (it != added_packages.end()) {
-    throw std::runtime_error("cycle found in json base");
-  }
-  added_packages.push_back(package->get_file_name());
-  for (const auto &elem : req_packages) {
-    std::string fn = elem;
-    auto req_package = read_package(fn, data);
-    package->insert_connected(req_package);
-  }
-  return package;
-}
-
 std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
                                                  json &data) {
-  json package_data = find_package(data, file_name);
-  json req_packages;
-  std::shared_ptr<Package> package = read_package(package_data, &req_packages);
-  std::vector<std::string> added_packages = {package->get_file_name()};
-  for (const auto &elem : req_packages) {
-    std::string fn = elem;
-    auto req_package = read_package(fn, data, added_packages);
-    package->insert_connected(req_package);
+  for (const auto &elem : read_strategies) {
+    if (elem->can_read(file_name)) {
+      return elem->read_package(file_name, data);
+    }
   }
-  return package;
+  throw std::runtime_error("bad package name format can't read");
 }
 
 std::shared_ptr<Package>
@@ -329,6 +318,40 @@ void Controler::remove_package(const std::string &file_name) {
     json data;
     ifile >> data;
     pm->remove(file_name);
+    ifile.close();
+    write_package_manager_to_file(storage_file_name, *pm);
+  } else {
+    throw std::runtime_error("cann`t open storage");
+  }
+}
+
+void Controler::remove_unuse() {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
+  std::ifstream ifile(storage_file_name);
+  if (ifile.is_open()) {
+    json data;
+    ifile >> data;
+    pm->remove_unuse();
+    ifile.close();
+    write_package_manager_to_file(storage_file_name, *pm);
+  } else {
+    throw std::runtime_error("cann`t open storage");
+  }
+}
+
+void Controler::global_update() {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
+  std::ifstream ifile(storage_file_name);
+  if (ifile.is_open()) {
+    json data;
+    ifile >> data;
+    pm->global_update();
     ifile.close();
     write_package_manager_to_file(storage_file_name, *pm);
   } else {

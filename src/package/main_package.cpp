@@ -16,6 +16,7 @@ std::ostream &Main_package::write(std::ostream &out) {
   j["type"] = "main";
   j["using_flag"] = using_flag;
   j["file_name"] = file_name;
+  j["package_name"] = package_name;
   j["publisher_name"] = publisher_name;
   j["current_version"] = current_version;
   j["last_version"] = last_version;
@@ -23,7 +24,7 @@ std::ostream &Main_package::write(std::ostream &out) {
   for (const auto &pkg : req_packages) {
     j["req_packages"].push_back(pkg->get_file_name());
   }
-  out << j;
+  out << j.dump(4);
   return out;
 }
 
@@ -32,6 +33,7 @@ json Main_package::write_to_json() const {
   j["type"] = "main";
   j["using_flag"] = using_flag;
   j["file_name"] = file_name;
+  j["package_name"] = package_name;
   j["publisher_name"] = publisher_name;
   j["current_version"] = current_version;
   j["last_version"] = last_version;

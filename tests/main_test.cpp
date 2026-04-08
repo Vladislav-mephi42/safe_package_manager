@@ -29,8 +29,8 @@ TEST_CASE("Main_package") {
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
     REQUIRE_NOTHROW(package =
-                        Main_package(file_name, publisher_name, current_version,
-                                     last_version, empty_req));
+                        Main_package("", file_name, publisher_name,
+                                     current_version, last_version, empty_req));
     REQUIRE(package.get_file_name() == "python.dep");
     REQUIRE(package.get_publisher_name() == "Rossym");
     REQUIRE(package.get_current_version() == "3.12");
@@ -49,8 +49,8 @@ TEST_CASE("Main_package") {
     std::string current_version = "3.12";
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
-    Main_package other(file_name, publisher_name, current_version, last_version,
-                       empty_req);
+    Main_package other("", file_name, publisher_name, current_version,
+                       last_version, empty_req);
     REQUIRE_NOTHROW(package = other);
     REQUIRE(package.get_file_name() == "python.dep");
     REQUIRE(package.get_publisher_name() == "Rossym");
@@ -80,8 +80,8 @@ TEST_CASE("Main_package") {
     std::string current_version = "3.12";
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
-    Main_package other(file_name, publisher_name, current_version, last_version,
-                       empty_req);
+    Main_package other("", file_name, publisher_name, current_version,
+                       last_version, empty_req);
     REQUIRE_NOTHROW(
         package.insert_connected(std::make_shared<Main_package>(other)));
     REQUIRE(package.get_connected_packages().size() == 1);
@@ -177,7 +177,7 @@ TEST_CASE("Empty_package") {
     std::string current_version = "3.12";
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
-    Main_package linked_package(file_name, publisher_name, current_version,
+    Main_package linked_package("", file_name, publisher_name, current_version,
                                 last_version, empty_req);
     REQUIRE_NOTHROW(
         package = Empty_package(
@@ -200,7 +200,7 @@ TEST_CASE("Empty_package") {
     std::string current_version = "3.12";
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
-    Main_package linked_package(file_name, publisher_name, current_version,
+    Main_package linked_package("", file_name, publisher_name, current_version,
                                 last_version, empty_req);
     Empty_package other(file_name,
                         std::make_shared<Main_package>(linked_package));
@@ -212,7 +212,8 @@ TEST_CASE("Empty_package") {
   }
   SECTION("Setters") {
     Empty_package package;
-    REQUIRE_NOTHROW(package.set_file_name("python.dep"));
+    REQUIRE_THROWS(package.set_file_name("python.dep"));
+    REQUIRE_NOTHROW(package.set_package_name("python.dep"));
     REQUIRE_THROWS(package.set_publisher_name("Rossym"));
     REQUIRE_THROWS(package.set_current_version("3.12"));
     REQUIRE_THROWS(package.set_last_version("3.12"));
@@ -235,7 +236,7 @@ TEST_CASE("Empty_package") {
     std::string current_version = "3.12";
     std::string last_version = "3.12";
     std::vector<std::shared_ptr<Package>> empty_req;
-    Main_package main_other(file_name, publisher_name, current_version,
+    Main_package main_other("", file_name, publisher_name, current_version,
                             last_version, empty_req);
     Empty_package other = Empty_package(
         "default.dep", std::make_shared<Main_package>(main_other));
@@ -419,9 +420,11 @@ TEST_CASE("Package manager (Basic methods)") {
   }
   SECTION("Add (Basic)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -439,9 +442,11 @@ TEST_CASE("Package manager (Basic methods)") {
   }
   SECTION("Add (two same packages with different other atributes)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -455,9 +460,11 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Add (cycle found)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_3.insert_connected(std::make_shared<Main_package>(pkg_1));
@@ -469,7 +476,8 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Add (the same package)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Package_manager pm;
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_1)));
@@ -477,7 +485,8 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Remove (basic)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Package_manager pm;
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 1);
@@ -487,7 +496,8 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Remove (basic) overload") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Package_manager pm;
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 1);
@@ -497,9 +507,11 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Remove (chain of packages)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -513,9 +525,11 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("Remove (support package in use)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -556,9 +570,11 @@ TEST_CASE("Package manager (Basic methods)") {
   }
   SECTION("find") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
@@ -587,9 +603,11 @@ TEST_CASE("Package manager (Basic methods)") {
 
   SECTION("cycle destroy") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", empty);
-    Main_package tmp_pkg(package_names[2], "batman", "123456", "12344", empty);
+    Main_package tmp_pkg("", package_names[2], "batman", "123456", "12344",
+                         empty);
     Empty_package pkg_3(package_names[2],
                         std::make_shared<Main_package>(tmp_pkg));
     pkg_3.insert_connected(std::make_shared<Main_package>(pkg_1));
@@ -623,13 +641,14 @@ TEST_CASE("Package  manager (advanced checks)") {
   SECTION("Removing package that is used by several other") {
     std::vector<std::shared_ptr<Package>> empty;
     auto pkg_1 = std::make_shared<Main_package>(
-        Main_package(package_names[0], "batman", "123456", "12344", empty));
+        Main_package("", package_names[0], "batman", "123456", "12344", empty));
     auto pkg_2 = std::make_shared<Main_package>(
-        Main_package(package_names[1], "batman", "123456", "12344", empty));
+        Main_package("", package_names[1], "batman", "123456", "12344", empty));
     auto tmp_pkg =
-        Main_package(package_names[2], "batman", "123456", "12344", empty);
+        Main_package("", package_names[2], "batman", "123456", "12344", empty);
     auto pkg_3 = std::make_shared<Empty_package>(Empty_package(
         package_names[2], std::make_shared<Main_package>(tmp_pkg)));
+    tmp_pkg.set_file_name(package_names[10]);
     auto pkg_4 = std::make_shared<Empty_package>(Empty_package(
         package_names[3], std::make_shared<Main_package>(tmp_pkg)));
     pkg_1->insert_connected(pkg_3);
@@ -644,9 +663,11 @@ TEST_CASE("Package  manager (advanced checks)") {
     REQUIRE_NOTHROW(pm.remove(pkg_2));
     REQUIRE(pm.size() == 0);
   }
+
   SECTION("Same packages with different configuration error(1)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
     Support_package pkg_2(package_names[0], "batman", "123456", "12344", empty);
     Package_manager pm;
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
@@ -655,8 +676,9 @@ TEST_CASE("Package  manager (advanced checks)") {
   }
   SECTION("Same packages with different configuration error(2)") {
     std::vector<std::shared_ptr<Package>> empty;
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", empty);
-    Main_package pkg_2(package_names[0], "joker", "123456", "12344", empty);
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
+                       empty);
+    Main_package pkg_2("", package_names[0], "joker", "123456", "12344", empty);
     Package_manager pm;
     REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_2)));
@@ -689,7 +711,8 @@ TEST_CASE("Controler") {
                            empty);
     pkg.insert_connected(std::make_shared<Main_package>(req_pkg_1));
     pkg.insert_connected(std::make_shared<Main_package>(req_pkg_2));
-    Main_package other(package_names[3], "batman", "123456", "12344", empty);
+    Main_package other("", package_names[3], "batman", "123456", "12344",
+                       empty);
 
     std::stringstream out_1;
     json tmp_1;
@@ -844,10 +867,11 @@ TEST_CASE("Controler") {
     file << data;
     file.close();
 
-    Main_package pkg_1_tmp(package_names[0], "batman", "123456", "12344", {});
+    Main_package pkg_1_tmp("", package_names[0], "batman", "123456", "12344",
+                           {});
     Support_package pkg_2_tmp(package_names[1], "batman", "123456", "12344",
                               {});
-    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
     Empty_package pkg_3_tmp(package_names[3],
                             std::make_shared<Main_package>(tmp));
     auto pkg_1 = std::make_shared<Main_package>(pkg_1_tmp);
@@ -859,6 +883,7 @@ TEST_CASE("Controler") {
     Controler controler;
     REQUIRE_THROWS(controler.write_package_to_file(pkg_1, "test_file_2.json"));
   }
+
   SECTION("write package from file(super bad format)") {
     json data;
     data["packages"] = json::array();
@@ -866,9 +891,9 @@ TEST_CASE("Controler") {
     file << data;
     file.close();
 
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344", {});
     Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
-    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
+    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
     Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
     pkg_2.insert_connected(std::make_shared<Main_package>(pkg_1));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
@@ -918,5 +943,144 @@ TEST_CASE("Controler main purpose test") {
     REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
     controler.remove_package(pkg_3.get_file_name());
     REQUIRE(pm.size() == compute_total_packages(3, 3, 3));
+  }
+}
+
+TEST_CASE("Controler empty packages") {
+  SECTION("Basic 1") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 3, 3, 3);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "1", "1", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+    Empty_package empty_package("python_super_package-last",
+                                std::make_shared<Main_package>(linked_package));
+
+    controler.write_package_to_file(
+        std::make_shared<Empty_package>(empty_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    auto result = controler.read_package("python_super_package-last", data);
+    REQUIRE(result->get_file_name() == better_package.get_file_name());
+    REQUIRE(result->get_publisher_name() ==
+            better_package.get_publisher_name());
+    REQUIRE(result->get_current_version() ==
+            better_package.get_current_version());
+    REQUIRE(result->get_package_name() != better_package.get_package_name());
+  }
+  SECTION("Basic 2") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+    Empty_package empty_package("python_super_package-last",
+                                std::make_shared<Main_package>(linked_package));
+
+    controler.write_package_to_file(
+        std::make_shared<Empty_package>(empty_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    auto result = controler.read_package("python_super_package-last", data);
+    REQUIRE(result->get_file_name() == linked_package.get_file_name());
+    REQUIRE(result->get_publisher_name() ==
+            linked_package.get_publisher_name());
+    REQUIRE(result->get_current_version() ==
+            linked_package.get_current_version());
+    REQUIRE(result->get_package_name() != linked_package.get_package_name());
+  }
+  SECTION("basic error(format error)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package-last", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error 1)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+  SECTION("basic error(not founded error 2)") {
+    Package_manager pm;
+    Controler controler;
+
+    build_manager_mm(pm, 2, 2, 2);
+    controler.write_package_manager_to_file("last.json", pm);
+    Main_package linked_package("python_super_package", package_names[0],
+                                "batman", "3", "3", {});
+    Main_package better_package("python_super_package", "I_am_the_best.dep",
+                                "batman", "2", "2", {});
+
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(linked_package), "last.json");
+    controler.write_package_to_file(
+        std::make_shared<Main_package>(better_package), "last.json");
+    std::ifstream file("last.json");
+    json data;
+    file >> data;
+    REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
   }
 }

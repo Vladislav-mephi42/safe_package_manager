@@ -21,6 +21,8 @@ public:
   virtual std::string get_last_version() const noexcept = 0;
   virtual std::string get_publisher_name() const noexcept = 0;
   virtual std::string get_file_name() const noexcept = 0;
+  virtual std::string get_package_name() const noexcept = 0;
+  virtual void set_package_name(const std::string &new_package_name) = 0;
   virtual void set_file_name(const std::string &new_file_name) = 0;
   virtual void set_publisher_name(const std::string &new_publisher_name) = 0;
   virtual void set_current_version(const std::string &new_version) = 0;
