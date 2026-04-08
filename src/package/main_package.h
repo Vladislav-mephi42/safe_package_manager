@@ -39,9 +39,9 @@ public:
                const std::string &current_version,
                const std::string &last_version,
                const std::vector<std::shared_ptr<Package>> &req_packages)
-      : file_name(file_name), publisher_name(publisher_name),
-        current_version(current_version), last_version(last_version),
-        req_packages(req_packages) {
+      : package_name(package_name), file_name(file_name),
+        publisher_name(publisher_name), current_version(current_version),
+        last_version(last_version), req_packages(req_packages) {
     correct();
     std::sort(this->req_packages.begin(), this->req_packages.end(),
               [](const auto &a, const auto &b) {

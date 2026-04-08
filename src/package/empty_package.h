@@ -31,6 +31,9 @@ public:
   Empty_package(const Empty_package &other) noexcept
       : package_name(other.package_name), linked_package(other.linked_package) {
   }
+  Empty_package() : package_name("default-last") {}
+
+  ~Empty_package() override = default;
   Empty_package &operator=(const Empty_package &other) noexcept {
     if (this != &other) {
       package_name = other.package_name;
@@ -38,9 +41,6 @@ public:
     }
     return *this;
   }
-  Empty_package() : package_name("default.dep") {}
-
-  ~Empty_package() override = default;
 
   std::string get_file_name() const noexcept override {
     if (!linked_package) {
