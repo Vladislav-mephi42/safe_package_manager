@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-class Read_strategy {
+class Deserialization_strategy {
 public:
   virtual bool can_read(const std::string &type_name) const = 0;
 
@@ -17,7 +17,7 @@ public:
                                         json *req_packages_names) const = 0;
 };
 
-class Main_read : public Read_strategy {
+class Main_read : public Deserialization_strategy {
 public:
   bool can_read(const std::string &type_name) const override {
     return type_name == "main";
@@ -46,7 +46,7 @@ public:
   }
 };
 
-class Support_read : public Read_strategy {
+class Support_read : public Deserialization_strategy {
 public:
   bool can_read(const std::string &type_name) const override {
     return type_name == "support";
@@ -75,7 +75,7 @@ public:
   }
 };
 
-class Empty_with_main_read : public Read_strategy {
+class Empty_with_main_read : public Deserialization_strategy {
 public:
   bool can_read(const std::string &type_name) const override {
     return type_name == "empty";
@@ -107,6 +107,88 @@ public:
     *req_packages_names = data["req_packages"];
     Empty_package empty_package(data["package_name"], package);
     return std::make_shared<Empty_package>(empty_package);
+  }
+};
+
+class Read_strategy {
+
+public:
+  virtual bool can_read(const std::string &type_name) const = 0;
+  virtual std::shared_ptr<Package> read_package(const std::string &file_name,
+                                                json &data) const = 0;
+  virtual void push_des_strategy(
+      const std::shared_ptr<Deserialization_strategy> strategy) = 0;
+  virtual void push_des_strategies(
+      const std::vector<std::shared_ptr<Deserialization_strategy>>
+          strategies) = 0;
+  virtual ~Read_strategy() = default;
+};
+
+class Default_read : public Read_strategy {
+private:
+  std::vector<std::shared_ptr<Deserialization_strategy>> des_strategies;
+
+  json find_package(std::istream &in, const std::string &file_name) const;
+  json find_package(json &data, const std::string &file_name) const;
+  json find_package(const std::string &filename,
+                    const std::string &file_name) const;
+  std::shared_ptr<Package> read_package(json &data, json *req_packages) const;
+  std::shared_ptr<Package>
+  read_package(const std::string &file_name, json &data,
+               std::vector<std::string> &added_packages) const;
+
+public:
+  Default_read() = default;
+  Default_read(const Default_read &other) = default;
+  ~Default_read() override = default;
+  bool can_read(const std::string &type_name) const override;
+  std::shared_ptr<Package> read_package(const std::string &file_name,
+                                        json &data) const override;
+  void push_des_strategy(
+      const std::shared_ptr<Deserialization_strategy> strategy) override {
+    des_strategies.push_back(strategy);
+  }
+  void push_des_strategies(
+      const std::vector<std::shared_ptr<Deserialization_strategy>> strategies)
+      override {
+    for (const auto &elem : strategies) {
+      des_strategies.push_back(elem);
+    }
+  }
+};
+
+class Empty_read : public Read_strategy {
+private:
+  std::vector<std::shared_ptr<Deserialization_strategy>> des_strategies;
+
+  json find_package(std::istream &in, const std::string &file_name) const;
+  json find_package(json &data, const std::string &file_name) const;
+  json find_package(const std::string &filename,
+                    const std::string &file_name) const;
+  std::shared_ptr<Package> read_package(json &data, json *req_packages) const;
+  std::shared_ptr<Package>
+  read_package(const std::string &file_name, json &data,
+               std::vector<std::string> &added_packages) const;
+  std::shared_ptr<Package>
+  read_package_using_file_name(const std::string &file_name, json &data) const;
+
+public:
+  Empty_read() = default;
+  Empty_read(const Empty_read &other) = default;
+  ~Empty_read() override = default;
+  bool can_read(const std::string &type_name) const override;
+  std::shared_ptr<Package> read_package(const std::string &package_name,
+                                        json &data) const override;
+  void push_des_strategy(
+      const std::shared_ptr<Deserialization_strategy> strategy) override {
+    des_strategies.push_back(strategy);
+  }
+  void push_des_strategies(
+      const std::vector<std::shared_ptr<Deserialization_strategy>> strategies)
+      override {
+    for (const auto &elem : strategies) {
+      des_strategies.push_back(elem);
+    }
   }
 };
 
