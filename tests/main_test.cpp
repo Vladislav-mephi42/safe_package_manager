@@ -5,6 +5,8 @@
 #include "package/package.h"
 #include "package/support_package.h"
 #include "package_manager/package_manager.h"
+#include "sockets/client.h"
+#include "sockets/server.h"
 #include <catch2/catch_all.hpp>
 #include <cmath>
 
@@ -1082,5 +1084,25 @@ TEST_CASE("Controler empty packages") {
     json data;
     file >> data;
     REQUIRE_THROWS(controler.read_package("python_super_package-last", data));
+  }
+}
+
+TEST_CASE("Network") {
+  SECTION("Basic logic") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    json request;
+    json response;
+    send_message["message"] = "Hello, server";
+
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(server_client.send_json(request));
+    REQUIRE_NOTHROW(response = client.recv_json());
+    REQUIRE(request == send_message);
+    REQUIRE(request == response);
   }
 }
