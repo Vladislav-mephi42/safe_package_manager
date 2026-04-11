@@ -1,19 +1,21 @@
 #define CATCH_CONFIG_MAIN
 #include "controler/controler.h"
+#include "network/client.h"
+#include "network/handle_strategy.h"
+#include "network/network_controler.h"
+#include "network/server.h"
 #include "package/empty_package.h"
 #include "package/main_package.h"
 #include "package/package.h"
 #include "package/support_package.h"
 #include "package_manager/package_manager.h"
-#include "sockets/client.h"
-#include "sockets/server.h"
 #include <catch2/catch_all.hpp>
 #include <cmath>
-
 #include <fstream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1104,5 +1106,382 @@ TEST_CASE("Network") {
     REQUIRE_NOTHROW(response = client.recv_json());
     REQUIRE(request == send_message);
     REQUIRE(request == response);
+  }
+  SECTION("Handle user update request(basic)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "user";
+    send_message["file_names"] = json::array();
+    send_message["file_names"].push_back("s_1.json");
+    send_message["file_names"].push_back("s_2.json");
+    send_message["request_type"] = "update";
+    Package_manager pm;
+    Controler controler;
+    build_manager_mm(pm, 2, 1, 1);
+    controler.write_package_manager_to_file("s_1.json", pm);
+    controler.write_package_manager_to_file("s_2.json", pm);
+    User_update_request handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client));
+    REQUIRE_NOTHROW(request = client.recv_json());
+    REQUIRE(request.contains("file_name"));
+    REQUIRE_NOTHROW(request = client.recv_json());
+    REQUIRE(request.contains("file_name"));
+    json cmp;
+    std::ifstream file("s_1.json");
+    file >> cmp;
+    request.erase("file_name");
+    REQUIRE(request == cmp);
+    REQUIRE(report.contains("final"));
+    REQUIRE(report["final"] == "operation end succesfuly");
+  }
+  SECTION("Handle user update request(error handling)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "user";
+    send_message["file_names"] = json::array();
+    send_message["file_names"].push_back("s.json");
+    send_message["file_names"].push_back("s_2.json");
+    send_message["request_type"] = "update";
+    Package_manager pm;
+    Controler controler;
+    build_manager_mm(pm, 2, 1, 1);
+    controler.write_package_manager_to_file("s_1.json", pm);
+    controler.write_package_manager_to_file("s_2.json", pm);
+    User_update_request handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(request = client.recv_json());
+    REQUIRE(request["status"] == "fail");
+    REQUIRE(report.contains("final"));
+    REQUIRE(report["final"] == "bad json format: file_name is invalid");
+  }
+  SECTION("Handle admin add request(basic)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password";
+    send_message["request_type"] = "add";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    Main_package test_package("joker", "joker.dep", "dc", "2.1", "2.1", {});
+    json packages_array = json::array();
+    json package;
+
+    controler.write_package_to_json(
+        std::make_shared<Main_package>(test_package), packages_array);
+    package["packages"] = packages_array;
+    send_message["package"] = package;
+    send_message["package_name"] = "joker.dep";
+    Admin_add_strategy handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "adding is successfully");
+    REQUIRE(report["status"] == "ok");
+    REQUIRE(controler.find_package("joker.dep"));
+  }
+  SECTION("Handle admin add request(bad json format error)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password";
+    send_message["request_type"] = "add";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    Main_package test_package("joker", "joker.dep", "dc", "2.1", "2.1", {});
+    json packages_array = json::array();
+    json package;
+
+    controler.write_package_to_json(
+        std::make_shared<Main_package>(test_package), packages_array);
+    package["packages"] = packages_array;
+    send_message["package"] = package;
+
+    Admin_add_strategy handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "bad json format");
+    REQUIRE(report["status"] == "fail");
+    REQUIRE(!controler.find_package("joker.dep"));
+  }
+  SECTION("Handle admin add request(password error)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password_ahahahahah_bebebbeebebeb";
+    send_message["request_type"] = "add";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    Main_package test_package("joker", "joker.dep", "dc", "2.1", "2.1", {});
+    json packages_array = json::array();
+    json package;
+
+    controler.write_package_to_json(
+        std::make_shared<Main_package>(test_package), packages_array);
+    package["packages"] = packages_array;
+    send_message["package"] = package;
+    send_message["package_name"] = "joker.dep";
+    Admin_add_strategy handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "bad password");
+    REQUIRE(report["status"] == "fail");
+    REQUIRE(!controler.find_package("joker.dep"));
+  }
+
+  SECTION("Handle admin remove request(basic)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password";
+    send_message["request_type"] = "remove";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    send_message["package_name"] = "pkg_0.dep";
+    Admin_remove_strategy handler;
+    json request;
+    json report;
+    REQUIRE(controler.find_package("pkg_0.dep"));
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "removing is successfully");
+    REQUIRE(report["status"] == "ok");
+    REQUIRE(!controler.find_package("pkg_0.dep"));
+  }
+
+  SECTION("Handle admin remove request(bad json format error)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password";
+    send_message["request_type"] = "remove";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    Admin_remove_strategy handler;
+    json request;
+    json report;
+    REQUIRE(controler.find_package("pkg_0.dep"));
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "bad json format");
+    REQUIRE(report["status"] == "fail");
+    REQUIRE(controler.find_package("pkg_0.dep"));
+  }
+
+  SECTION("Handle admin remove request(password error)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password_ahahahhaha_bebebeeb";
+    send_message["request_type"] = "remove";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    send_message["package_name"] = "pkg_0.dep";
+    Admin_remove_strategy handler;
+    json request;
+    json report;
+    REQUIRE(controler.find_package("pkg_0.dep"));
+    REQUIRE(handler.can_handle(send_message["request_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "bad password");
+    REQUIRE(report["status"] == "fail");
+    REQUIRE(controler.find_package("pkg_0.dep"));
+  }
+  SECTION("Handle strategy (admin)(add)(basic)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "admin";
+    send_message["password"] = "secret_password";
+    send_message["request_type"] = "add";
+
+    Package_manager pm;
+    build_manager_mm(pm, 2, 1, 1);
+    Controler controler("server.json", &pm);
+
+    Main_package test_package("joker", "joker.dep", "dc", "2.1", "2.1", {});
+    json packages_array = json::array();
+    json package;
+
+    controler.write_package_to_json(
+        std::make_shared<Main_package>(test_package), packages_array);
+    package["packages"] = packages_array;
+    send_message["package"] = package;
+    send_message["package_name"] = "joker.dep";
+    Handle_admin_strategy handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["user_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(server_client.send_json(report));
+    REQUIRE_NOTHROW(report = client.recv_json());
+    REQUIRE(report.contains("final"));
+    REQUIRE(report.contains("status"));
+    REQUIRE(report["final"] == "adding is successfully");
+    REQUIRE(report["status"] == "ok");
+    REQUIRE(controler.find_package("joker.dep"));
+  }
+  SECTION("Handle strategy (user)(update)(basic)") {
+    Server_socket server(49152, INADDR_ANY);
+    listen(server.get_server_socket(), 1);
+    Client_socket client(49152, "127.0.0.1");
+    Client_socket server_client = server.accept();
+    json send_message;
+    send_message["user_type"] = "user";
+    send_message["file_names"] = json::array();
+    send_message["file_names"].push_back("s_1.json");
+    send_message["file_names"].push_back("s_2.json");
+    send_message["request_type"] = "update";
+    Package_manager pm;
+    Controler controler;
+    build_manager_mm(pm, 2, 1, 1);
+    controler.write_package_manager_to_file("s_1.json", pm);
+    controler.write_package_manager_to_file("s_2.json", pm);
+    Handle_user_strategy handler;
+    json request;
+    json report;
+    REQUIRE(handler.can_handle(send_message["user_type"]));
+    REQUIRE_NOTHROW(client.send_json(send_message));
+    REQUIRE_NOTHROW(request = server_client.recv_json());
+    REQUIRE_NOTHROW(report = handler.handle(request, server_client, controler));
+    REQUIRE_NOTHROW(request = client.recv_json());
+    REQUIRE(request.contains("file_name"));
+    REQUIRE_NOTHROW(request = client.recv_json());
+    REQUIRE(request.contains("file_name"));
+    json cmp;
+    std::ifstream file("s_1.json");
+    file >> cmp;
+    request.erase("file_name");
+    REQUIRE(request == cmp);
+    REQUIRE(report.contains("final"));
+    REQUIRE(report["final"] == "operation end succesfuly");
+  }
+}
+
+TEST_CASE("Network controler") {
+  SECTION("basic") {
+    Server_socket server_socket(49152);
+    if (listen(server_socket.get_server_socket(), 1) < 0) {
+      throw std::runtime_error("listen failed: " +
+                               std::string(strerror(errno)));
+    }
+    Package_manager pm_for_server;
+    build_manager_mm(pm_for_server, 2, 3, 2);
+    Controler controler_for_server("storage.json", &pm_for_server);
+    Package_manager pm_for_client;
+
+    std::vector<std::string> file_names = {"storage.json"};
+
+    Server_network_controler server(&controler_for_server);
+    Client_network_controler client_network_controler(49152, "127.0.0.1",
+                                                      file_names);
+    auto lambda = [&client_network_controler]() {
+      client_network_controler.update();
+    };
+    std::thread th(lambda);
+
+    auto server_client = server_socket.accept();
+    json request = server_client.recv_json();
+    REQUIRE(request["request_type"] == "update");
+    REQUIRE_NOTHROW(request = server.handle(request, server_client));
+    th.join();
+    REQUIRE(request["status"] == "ok");
   }
 }
