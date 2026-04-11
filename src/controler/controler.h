@@ -60,6 +60,7 @@ public:
     for (const auto &elem : json_repositories_names) {
       correct_json(elem);
     }
+
     Empty_with_main_read empty;
     Support_read support;
     Main_read main;
@@ -75,6 +76,21 @@ public:
     } else {
       read_package_manager_from_file(storage_file_name, *pm);
     }
+  }
+
+  Controler(const std::string &storage_file_name, Package_manager *pm)
+      : storage_file_name(storage_file_name), pm(pm) {
+
+    Empty_with_main_read empty;
+    Support_read support;
+    Main_read main;
+    des_strategies.push_back(std::make_shared<Empty_with_main_read>(empty));
+    des_strategies.push_back(std::make_shared<Support_read>(support));
+    des_strategies.push_back(std::make_shared<Main_read>(main));
+    Default_read read;
+    read.push_des_strategies(des_strategies);
+    read_strategies.push_back(std::make_shared<Default_read>(read));
+    write_package_manager_to_file(storage_file_name, *pm);
   }
 
   const std::vector<std::string> &get_json_repozitories_names() const noexcept {
@@ -112,10 +128,10 @@ public:
                                      Package_manager &pm);
 
   std::shared_ptr<Package> read_package(const std::string &file_name,
-                                        json &data);
+                                        json &data) const;
   std::shared_ptr<Package>
   read_package(const std::string &file_name, json &data,
-               std::vector<std::string> &added_packages);
+               std::vector<std::string> &added_packages) const;
 
   static std::ostream &write_package(const std::shared_ptr<Package> &package,
                                      std::ostream &out);
@@ -125,6 +141,7 @@ public:
   json find_package(const std::string &filename, const std::string &file_name);
 
   void add_package(const std::string &file_name);
+  void add_package_external(const std::shared_ptr<Package> &package);
   void remove_package(const std::string &file_name);
   bool find_package(const std::string &file_name) {
     return pm->find(file_name);
