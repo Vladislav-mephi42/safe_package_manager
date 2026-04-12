@@ -70,7 +70,6 @@ target_link_libraries(admin_app PRIVATE my_logic)
 add_executable(main_test ${TESTS}/main_test.cpp)
 target_link_libraries(main_test PRIVATE my_logic Catch2::Catch2WithMain)
 
-add_executable(timing ${TESTS}/timing.cpp)
-target_link_libraries(timing PRIVATE my_logic Catch2::Catch2WithMain)
+
 add_executable(map_tests ${TESTS}/map_tests.cpp)
 target_link_libraries(map_tests PRIVATE my_logic Catch2::Catch2WithMain)

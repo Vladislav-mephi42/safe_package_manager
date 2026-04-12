@@ -28,10 +28,7 @@ void sigchld_handler(int sig) {
     ;
 }
 
-void sigint_handler(int) {
-  stop_flag = 1;
-  std::cout << "=====Server end working...=======" << std::endl;
-}
+void sigint_handler(int) { stop_flag = 1; }
 int main() {
   std::vector<std::string> repozitories_file_names = {
       "rep_1.json", "rep_2.json", "rep_3.json"};
@@ -44,7 +41,7 @@ int main() {
     sa.sa_flags = SA_RESTART;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGCHLD, &sa, nullptr) == -1) {
-      perror("sigaction SIGCHLD");
+      std::cout << "Eror with sigaction SIGCHLD" << std::endl;
       return 1;
     }
 
@@ -52,7 +49,7 @@ int main() {
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGINT, &sa, nullptr) == -1) {
-      perror("sigaction SIGINT");
+      std::cout << "Error with sigaction SIGINT" << std::endl;
       return 1;
     }
 
@@ -138,6 +135,7 @@ int main() {
         continue;
       }
     }
+    std::cout << "=====Server end working...=======" << std::endl;
     return 0;
   } catch (const std::exception &e) {
     std::cout << "Error : " << e.what() << std::endl;
