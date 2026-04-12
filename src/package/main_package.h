@@ -100,7 +100,7 @@ public:
   std::string get_package_name() const noexcept override {
     return package_name;
   }
-  void set_package_name(const std::string &new_prog_name) {
+  void set_package_name(const std::string &new_prog_name) override {
     if (new_prog_name == "") {
       throw std::runtime_error("bad new prog name");
     }
