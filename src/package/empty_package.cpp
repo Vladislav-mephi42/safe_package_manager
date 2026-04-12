@@ -48,8 +48,3 @@ json Empty_package::write_to_json() const {
 
   return linked;
 }
-
-std::string my_readline(std::istream &in);
-std::istream &
-read_linked_package(std::istream &in, std::shared_ptr<Package> &linked_package,
-                    std::vector<std::shared_ptr<Read_strategy>> &strategies);

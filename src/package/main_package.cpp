@@ -44,11 +44,3 @@ json Main_package::write_to_json() const {
 
   return j;
 }
-
-json read_int(std::istream &in);
-std::string my_readline(std::istream &in);
-std::istream &
-read_req_packages(std::istream &in,
-                  std::vector<std::shared_ptr<Package>> &req_packages,
-                  std::vector<std::shared_ptr<Read_strategy>> &strategies,
-                  int req_packages_count);

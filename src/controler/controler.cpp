@@ -114,7 +114,7 @@ json Controler::find_package(std::istream &in,
 }
 
 std::shared_ptr<Package> Controler::read_package(const std::string &file_name,
-                                                 json &data) {
+                                                 json &data) const {
   for (const auto &elem : read_strategies) {
     if (elem->can_read(file_name)) {
       return elem->read_package(file_name, data);
@@ -198,7 +198,7 @@ bool contains_package_2(const json &array, const std::string &file_name) {
 void Controler::write_package_to_json(const std::shared_ptr<Package> &package,
                                       json &new_data) {
   pm->cycle_check(package);
-  if (!contains_package_2(new_data, package->get_file_name())) {
+  if (!contains_package(new_data, package->get_file_name())) {
     new_data.push_back(package->write_to_json());
   } else {
     throw std::runtime_error("unreal package");
@@ -306,6 +306,24 @@ void Controler::add_package(const std::string &file_name) {
   }
 
   throw std::runtime_error("No such package in repozitories");
+}
+
+void Controler::add_package_external(const std::shared_ptr<Package> &package) {
+  if (pm == nullptr) {
+    throw std::runtime_error(
+        "there is no package manager being monitored by the controller");
+  }
+
+  try {
+    pm->add(package);
+  } catch (const std::exception &e) {
+    std::string what(e.what());
+    if (what == "cycle found") {
+      pm->cycle_destroy(package);
+    }
+    throw std::runtime_error("cycle found");
+  }
+  write_package_to_file(package, storage_file_name);
 }
 
 void Controler::remove_package(const std::string &file_name) {

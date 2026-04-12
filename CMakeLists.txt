@@ -46,6 +46,7 @@ set(LOGIC_SOURCES
     ${SRC}/controler/controler.cpp
     ${SRC}/controler/strategy.cpp
     ${SRC}/package_manager/package_manager.cpp
+    ${SRC}/network/handle_strategy.cpp
 )
 
 
@@ -57,9 +58,14 @@ target_include_directories(my_logic PUBLIC ${SRC})
 
 target_link_libraries(my_logic PUBLIC nlohmann_json::nlohmann_json)
 
-add_executable(app ${SRC}/application/application.cpp)
-target_link_libraries(app PRIVATE my_logic)
+add_executable(client_app ${SRC}/application/client_app.cpp)
+target_link_libraries(client_app PRIVATE my_logic)
 
+add_executable(server_app ${SRC}/application/server_app.cpp)
+target_link_libraries(server_app PRIVATE my_logic)
+
+add_executable(admin_app ${SRC}/application/admin_app.cpp)
+target_link_libraries(admin_app PRIVATE my_logic)
 
 add_executable(main_test ${TESTS}/main_test.cpp)
 target_link_libraries(main_test PRIVATE my_logic Catch2::Catch2WithMain)

@@ -12,10 +12,7 @@ enum Colour { white, grey, black };
 void Package_manager::add(
 
     const std::shared_ptr<Package> &new_package, bool main_flag,
-    bool cycle_destroy_flag) // main flag is a variable, that told to programm
-                             // what kind of call it is - first for root package
-                             // or other call for kids-packages
-{
+    bool cycle_destroy_flag) {
   const auto it = map.find(new_package->get_file_name());
 
   if (it != map.cend()) {
@@ -119,8 +116,7 @@ void Package_manager::remove(const std::shared_ptr<Package> &package) {
   remove(package->get_file_name());
 }
 
-bool Thread_visit( // NEED an std::atomic mode(std::memory_order_relaxed)
-                   // analysis
+bool Thread_visit(
     const std::shared_ptr<Package> &u,
     std::unordered_map<std::string, std::atomic<Colour>> &colour) {
 

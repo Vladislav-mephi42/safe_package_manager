@@ -2,8 +2,10 @@
 #include "controler/controler.h"
 #include "view/view.h"
 
+#include "network/client.h"
+#include "network/network_controler.h"
+#include "network/server.h"
 #include "package/package.h"
-
 #include "package_manager/package_manager.h"
 #include <fstream>
 #include <iostream>
@@ -23,9 +25,9 @@ int main() {
   std::cout
       << "Enter json data bases names, the first step is writting number of it"
       << std::endl;
-  std::cout
-      << "If you write 0, default data bases will be used (1.json, 2.json)"
-      << std::endl;
+  std::cout << "If you write 0, default data bases will be used (rep_1.json, "
+               "rep_2.json, rep_3.json)"
+            << std::endl;
   int len = View::read_int("number a number of json data bases names", std::cin,
                            std::cout);
   std::vector<std::string> json_repositories_names;
@@ -35,9 +37,10 @@ int main() {
       json_repositories_names.push_back(base_name);
     }
   } else {
-    std::cout << "start with default repozitories (1.json, 2.json)"
+    std::cout << "start with default repozitories (rep_1.json, rep_2.json, "
+                 "rep_3.json)"
               << std::endl;
-    json_repositories_names = {"1.json", "2.json"};
+    json_repositories_names = {"rep_1.json", "rep_2.json", "rep_3.json"};
   }
 
   try {
@@ -63,6 +66,8 @@ int main() {
 
   std::string file_name;
   std::ifstream package_file;
+  Client_network_controler network_controler(49152, "127.0.0.1",
+                                             json_repositories_names);
   int option = 0;
   do {
     try {
@@ -110,7 +115,7 @@ int main() {
         break;
 
       case 7:
-        controler.global_update();
+        network_controler.update();
         break;
 
       case 9:

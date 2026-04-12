@@ -34,6 +34,7 @@ public:
   Empty_package() : package_name("default-last") {}
 
   ~Empty_package() override = default;
+
   Empty_package &operator=(const Empty_package &other) noexcept {
     if (this != &other) {
       package_name = other.package_name;
@@ -78,10 +79,10 @@ public:
   std::string get_package_name() const noexcept override {
     return package_name;
   }
-  void set_package_name(const std::string &new_package_name) {
-    // if (new_package_name == "") {
-    //   throw std::runtime_error("bad new prog name");
-    // }
+  void set_package_name(const std::string &new_package_name) override {
+    if (new_package_name == "") {
+      throw std::runtime_error("bad new prog name");
+    }
     package_name = new_package_name;
   }
   void set_file_name(const std::string &new_file_name) override {
