@@ -1456,7 +1456,7 @@ TEST_CASE("Network") {
 }
 
 TEST_CASE("Network controler") {
-  SECTION("basic") {
+  SECTION("user update(basic)") {
     Server_socket server_socket(49152);
     if (listen(server_socket.get_server_socket(), 1) < 0) {
       throw std::runtime_error("listen failed: " +
@@ -1483,5 +1483,36 @@ TEST_CASE("Network controler") {
     REQUIRE_NOTHROW(request = server.handle(request, server_client));
     th.join();
     REQUIRE(request["status"] == "ok");
+  }
+  SECTION("user update(error)") {
+    Server_socket server_socket(49152);
+    if (listen(server_socket.get_server_socket(), 1) < 0) {
+      throw std::runtime_error("listen failed: " +
+                               std::string(strerror(errno)));
+    }
+    Package_manager pm_for_server;
+    build_manager_mm(pm_for_server, 2, 3, 2);
+    Controler controler_for_server("storage.json", &pm_for_server);
+    Package_manager pm_for_client;
+
+    std::vector<std::string> file_names = {"storage_kandldnvlvnfvn.json"};
+
+    Server_network_controler server(&controler_for_server);
+    Client_network_controler client_network_controler(49152, "127.0.0.1",
+                                                      file_names);
+    auto lambda = [&client_network_controler]() {
+      try {
+        client_network_controler.update();
+      } catch (...) {
+      }
+    };
+    std::thread th(lambda);
+
+    auto server_client = server_socket.accept();
+    json request = server_client.recv_json();
+    REQUIRE(request["request_type"] == "update");
+    REQUIRE_NOTHROW(request = server.handle(request, server_client));
+    th.join();
+    REQUIRE(request["status"] == "fail");
   }
 }
