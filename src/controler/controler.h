@@ -77,6 +77,24 @@ public:
       read_package_manager_from_file(storage_file_name, *pm);
     }
   }
+  ~Controler() = default;
+  Controler(const Controler &other)
+      : des_strategies(other.des_strategies),
+        read_strategies(other.read_strategies),
+        json_repozitories_names(other.json_repozitories_names),
+        storage_file_name(other.storage_file_name), pm(other.pm) {}
+
+  Controler &operator=(const Controler &other) {
+    if (this != &other) {
+      // Копируем все члены
+      des_strategies = other.des_strategies;
+      read_strategies = other.read_strategies;
+      json_repozitories_names = other.json_repozitories_names;
+      storage_file_name = other.storage_file_name;
+      pm = other.pm;
+    }
+    return *this;
+  }
 
   Controler(const std::string &storage_file_name, Package_manager *pm)
       : storage_file_name(storage_file_name), pm(pm) {

@@ -42,26 +42,35 @@ public:
 
   static int read_int(const std::string &prompt, std::istream &in,
                       std::ostream &out) {
-    int number = 0;
-
     while (true) {
       out << "Input " << prompt << " --> ";
+      std::string line;
 
-      if (in >> number) {
-        in.clear();
-        in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        break;
-      }
-      if (in.eof()) {
+      if (!std::getline(in, line)) {
         throw std::runtime_error("EOF");
       }
 
-      in.clear();
-      in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      out << "Wrong input, please try again." << std::endl;
-    }
+      if (line.empty()) {
+        out << "Empty input, please enter an integer." << std::endl;
+        continue;
+      }
 
-    return number;
+      std::istringstream iss(line);
+      int number;
+
+      if (iss >> number) {
+
+        char leftover;
+        if (iss >> leftover) {
+          out << "Invalid input: extra characters after number." << std::endl;
+          continue;
+        }
+        return number;
+      } else {
+        out << "Invalid input: not an integer." << std::endl;
+        continue;
+      }
+    }
   }
 
   static std::string readline(std::istream &in) {
