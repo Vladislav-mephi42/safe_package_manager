@@ -86,16 +86,17 @@ public:
     json response;
     for (int i = 0; i < file_names.size(); i++) {
       response = client.recv_json();
-      if (response["status"] == "fail" || !response.contains("file_name")) {
-        return;
+      if (response["status"] == "fail") {
+
         throw std::runtime_error("server_error");
       } else {
         std::ofstream file(response["file_name"]);
         if (!file.is_open()) {
-          return;
+
           throw std::runtime_error("file open error");
         }
         response.erase("file_name");
+        response.erase("status");
         file << response.dump(4);
         file.close();
       }

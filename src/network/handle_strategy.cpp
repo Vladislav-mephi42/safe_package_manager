@@ -25,32 +25,6 @@
 static std::hash<std::string> hasher;
 static size_t hash = hasher("secret_password");
 
-//////////////////////////////////////////////////////////
-/////REQUEST//////////////////////////////////////////////
-/// 1) user_type
-/// 2) request_type
-/// 3) param_1
-/// 4) .......
-/// 5) param_n
-/////////////////////////////////////////////////////////
-/////ERROR_RESPONSE//////////////////////////////////////
-/// 1) status ("fail")
-/// 2) error_message
-/////////////////////////////////////////////////////////
-/////OK_RESPONSE/////////////////////////////////////////
-/// 1) status ("ok")
-/// 2) param_1
-/////////////////////////////////////////////////////////
-/////UPDATE_RESPONSE/////////////////////////////////////
-/// 1) status ("ok")
-/// 2) number of files
-/// #file_name in json response, must be deleted
-/////OTHER_RESPONSE
-/// 1) status
-/// 2) message
-/////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////
-
 bool password_check(const std::string &password) {
   if (hasher(password) == hash) {
     return true;
@@ -64,9 +38,7 @@ bool User_update_request::can_handle(const std::string &request_type) const {
   }
   return false;
 }
-// Если вдруг происходит ошибка то метод звершает свою работу, в конце уже в
-// вызывающем методе все равно отравится завершающее сообщение с подробным
-// отзывом
+
 json User_update_request::handle(const json &request,
                                  const Client_socket &socket) const {
 
@@ -114,8 +86,7 @@ json User_update_request::handle(const json &request,
 
   return ok_response;
 }
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
+
 bool Admin_add_strategy::can_handle(const std::string &request_type) const {
 
   if (request_type == "add") {
@@ -158,7 +129,7 @@ json Admin_add_strategy::handle(json &request, Client_socket &socket,
   data["final"] = "adding is successfully";
   return data;
 }
-///////////////////////////////////////////////////////////
+
 bool Admin_remove_strategy::can_handle(const std::string &request_type) const {
   if (request_type == "remove") {
     return true;

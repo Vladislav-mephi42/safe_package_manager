@@ -137,10 +137,8 @@ public:
   }
 
   bool send_update_request();
-  bool
-  send_admin_add_request(const std::string &password); // Принимает package;
-  bool send_admin_remove_request(
-      const std::string &password); // Принимает package_name
+  bool send_admin_add_request(const std::string &password);
+  bool send_admin_remove_request(const std::string &password);
   json send_admin_find_request(const std::string &password);
 };
 

@@ -94,6 +94,7 @@ public:
 
       if (elem->can_handle(request["request_type"])) {
         json response = elem->handle(request, socket);
+        socket.send_json(request);
         return response;
       }
     }
@@ -129,6 +130,7 @@ public:
 
       if (elem->can_handle(request["request_type"])) {
         json response = elem->handle(request, socket, controler);
+        socket.send_json(response);
         return response;
       }
     }
