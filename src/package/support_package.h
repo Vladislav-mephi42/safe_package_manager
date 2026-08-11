@@ -14,18 +14,35 @@
 using json = nlohmann::json;
 
 class Main_package;
-
+/**
+ * @brief Represents a support package of software.
+ * This class is used to store metadata about a software application,
+ * including its version history, publisher details, operational state, and a
+ * list of required dependency packages
+ *
+ */
 class Support_package : public Package {
 private:
+  /**The display name of the software package */
   std::string package_name;
+  /**The name of executable or archieve file */
   std::string file_name;
+  /**The name of the publisher or developer */
   std::string publisher_name;
+  /**The currently installed version of software */
   std::string current_version;
+  /**The latest available version of software */
   std::string last_version;
+  /**Indicates the installed state of the package */
   bool condition = false;
+  /**Indicates whather this instance is a dependency of any other package.*/
   bool using_flag = false;
+  /** A vector of pointers to the dependency packages. */
   std::vector<std::shared_ptr<Package>> req_packages;
-
+  /**
+   * @brief Checks whether all fields of the objet are valid.
+   *
+   */
   void correct() {
     if (publisher_name == "" || current_version == "" || last_version == "") {
       throw std::invalid_argument("Empty field");
@@ -39,6 +56,17 @@ private:
   }
 
 public:
+  /**
+   * @brief Constructs a new Support_package object with specified metadate and
+    dependences.
+   *
+   * @param package_name
+   * @param file_name
+   * @param publisher_name
+   * @param current_version
+   * @param last_version
+   * @param req_packages
+   */
   Support_package(const std::string &package_name, const std::string &file_name,
                   const std::string &publisher_name,
                   const std::string &current_version,
@@ -53,6 +81,16 @@ public:
                 return a->get_file_name() < b->get_file_name();
               });
   }
+  /**
+   * @brief Constructs a new Support_package object with specified metadate and
+    dependences.
+   *
+   * @param file_name
+   * @param publisher_name
+   * @param current_version
+   * @param last_version
+   * @param req_packages
+   */
   Support_package(const std::string &file_name,
                   const std::string &publisher_name,
                   const std::string &current_version,
@@ -68,57 +106,115 @@ public:
                 return a->get_file_name() < b->get_file_name();
               });
   }
-  Support_package(const Support_package &other)
-      : package_name(other.package_name), file_name(other.file_name),
-        publisher_name(other.publisher_name),
-        current_version(other.current_version),
-        last_version(other.last_version), req_packages(other.req_packages) {}
-  Support_package &operator=(const Support_package &other) {
-    if (this != &other) {
-      package_name = other.package_name;
-      file_name = other.file_name;
-      publisher_name = other.publisher_name;
-      current_version = other.current_version;
-      last_version = other.last_version;
-      req_packages = other.req_packages;
-    }
-    return *this;
-  }
-
+  /**
+   * @brief Constructs a new Support_package object (Copy constructor).
+   *
+   * @param other
+   */
+  Support_package(const Support_package &other) = default;
+  /**
+   * @brief Copy operator=.
+   *
+   * @param other
+   * @return Support_package&
+   */
+  Support_package &operator=(const Support_package &other) = default;
+  /**
+   * @brief Constructs a new Support_package object (Move onstructor)
+   *
+   * @param other
+   */
+  Support_package(Support_package &&other) = default;
+  /**
+   * @brief Move operator=.
+   *
+   * @param other
+   * @return Support_package&
+   */
+  Support_package &operator=(Support_package &&other) = default;
+  /**
+   * @brief Constructs a new Support_package object with default placeholder
+   values.
+   *
+   * All fiels are initialized to syntactically valid but sematically empty
+   defaults. This constructor is intended for creating an object that will be
+   * populated later.
+   */
   Support_package()
       : package_name("default"), file_name("default.dep"),
         publisher_name("default"), current_version("default"),
         last_version("default") {}
-
+  /**
+   * @brief Destroy the Support_package object
+   *
+   */
   ~Support_package() override = default;
-
+  /**
+   * @brief Marks the instance as installed.
+   *
+   */
   void add() override;
-
+  /**
+   * @brief Marks the instance as uninstalled.
+   *
+   */
   void remove() override;
-
+  /**
+   * @brief Gets the file name object.
+   *
+   * @return std::string
+   */
   std::string get_file_name() const noexcept override { return file_name; }
-
+  /**
+   * @brief Gets the publisher name object.
+   *
+   * @return std::string
+   */
   std::string get_publisher_name() const noexcept override {
     return publisher_name;
   }
-
+  /**
+   * @brief Gets the condition object.
+   *
+   * @return true
+   * @return false
+   */
   bool get_condition() const noexcept override { return condition; };
   std::string get_current_version() const noexcept override {
     return current_version;
   };
-
+  /**
+   * @brief Gets the last version object.
+   *
+   * @return std::string
+   */
   std::string get_last_version() const noexcept override {
     return last_version;
   };
+  /**
+   * @brief Gets the package name object.
+   *
+   * @return std::string
+   */
   std::string get_package_name() const noexcept override {
     return package_name;
   }
+  /**
+   * @brief Sets the package name object.
+   *
+   * @param new_package_name
+   */
   void set_package_name(const std::string &new_package_name) override {
     if (new_package_name == "") {
       throw std::runtime_error("bad new prog name");
     }
     package_name = new_package_name;
   }
+  /**
+   * @brief Sets the file name object.
+   *
+   * @param new_file_name
+   */
   void set_file_name(const std::string &new_file_name) override {
     if (new_file_name.length() < 5) {
       throw std::invalid_argument("invalid file_name");
@@ -128,33 +224,58 @@ public:
     }
     file_name = new_file_name;
   };
-
+  /**
+   * @brief Sets the publisher name object.
+   *
+   * @param new_publisher_name
+   */
   void set_publisher_name(const std::string &new_publisher_name) override {
     if (new_publisher_name == "") {
       throw std::invalid_argument("invalid publisher_name");
     }
     publisher_name = new_publisher_name;
   };
-
+  /**
+   * @brief Sets the current version object.
+   *
+   * @param new_version
+   */
   void set_current_version(const std::string &new_version) override {
     if (new_version == "") {
       throw std::invalid_argument("invalid version");
     }
     current_version = new_version;
   }
-
+  /**
+   * @brief Sets the last version object.
+   *
+   * @param new_version
+   */
   void set_last_version(const std::string &new_version) override {
     if (new_version == "") {
       throw std::invalid_argument("invalid version");
     }
     last_version = new_version;
   }
-
+  /**
+   * @brief Gets the connected packages object.
+   *
+   * @return const std::vector<std::shared_ptr<Package>>&
+   */
   const std::vector<std::shared_ptr<Package>> &
   get_connected_packages() const override {
     return req_packages;
   }
-
+  /**
+   * @brief Adds a new dependency package to the list of required packages
+   *
+   * Checks whether the package is already present in the list by comparing
+   * both pointers and values. If the package is not found, it is inserted
+   * and the list is sorted alphabetically by file name.
+   * @param package
+   * @return true
+   * @return false
+   */
   bool insert_connected(const std::shared_ptr<Package> &package) override {
     if (std::find(req_packages.begin(), req_packages.end(), package) !=
         req_packages.end()) {
@@ -172,7 +293,13 @@ public:
               });
     return true;
   }
-
+  /**
+   * @brief Removes an existing dependency from the list of required packages.
+   *
+   * @param package
+   * @return true
+   * @return false
+   */
   bool erase_connected(const Package &package) override {
     auto it = std::find_if(req_packages.begin(), req_packages.end(),
                            [&package](auto x) { return package == (*x); });
@@ -182,7 +309,13 @@ public:
     req_packages.erase(it);
     return true;
   }
-
+  /**
+   * @brief Overloaded operator==.
+   *
+   * @param o
+   * @return true
+   * @return false
+   */
   bool operator==(const Package &o) const override {
 
     if (dynamic_cast<const Support_package *>(&o) == nullptr) {
@@ -195,21 +328,50 @@ public:
                         o.get_publisher_name(), o.get_file_name());
     return this_t == other_t;
   }
-
+  /**
+   * @brief Gets the using flag object.
+   *
+   * @return true
+   * @return false
+   */
   bool get_using_flag() const noexcept override { return false; }
-
+  /**
+   * @brief Sets the using flag object.
+   *
+   * @param new_using_flag
+   */
   void set_using_flag(bool new_using_flag) override { (void)new_using_flag; }
-
+  /**
+   * @brief Writes the package metadata to an output stream.
+   *
+   * @param out
+   * @return std::ostream&
+   */
   std::ostream &write(std::ostream &out) override;
 
+  /**
+   * @brief Creates a deep copy of this package.
+   *
+   * @return std::shared_ptr<Package>
+   */
   std::shared_ptr<Package> clone() const override {
-    return std::make_shared<Support_package>(*this);
+    std::vector<std::shared_ptr<Package>> copy_req_packages;
+    for (auto &elem : req_packages) {
+      copy_req_packages.push_back(elem->clone());
+    }
+    Support_package res(package_name, file_name, publisher_name,
+                        current_version, last_version, copy_req_packages);
+    return std::make_shared<Support_package>(res);
   }
 
   std::vector<std::shared_ptr<Package>> devide(unsigned int parts_count);
-
   static std::shared_ptr<Package>
   connect(std::vector<std::shared_ptr<Package>> packages);
+  /**
+   * @brief Serializes the package metadata to a JSON object.
+   *
+   * @return json
+   */
   json write_to_json() const override;
 };
 
