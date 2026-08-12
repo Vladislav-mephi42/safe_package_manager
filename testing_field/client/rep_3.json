@@ -1,0 +1,182 @@
+{
+    "packages": [
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_13.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_13",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_11.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_11",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_9.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_9",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_3.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_3",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_8.dep",
+                "pkg_9.dep"
+            ],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_8.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_8",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_5.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_5",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_12.dep",
+                "pkg_13.dep"
+            ],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_12.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_12",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_1.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_1",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_4.dep",
+                "pkg_5.dep"
+            ],
+            "type": "main",
+            "using_flag": true
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_4.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_4",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_10.dep",
+                "pkg_11.dep"
+            ],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_10.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_10",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_6.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_6",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_2.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_2",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_6.dep",
+                "pkg_7.dep"
+            ],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_7.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_7",
+            "publisher_name": "vlad",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2.1",
+            "file_name": "pkg_0.dep",
+            "last_version": "2.1",
+            "package_name": "pkg_0",
+            "publisher_name": "vlad",
+            "req_packages": [
+                "pkg_2.dep",
+                "pkg_3.dep"
+            ],
+            "type": "main",
+            "using_flag": true
+        },
+        {
+            "current_version": "3",
+            "file_name": "coreutils.dep",
+            "last_version": "3",
+            "package_name": "python_super_package",
+            "publisher_name": "batman",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        },
+        {
+            "current_version": "2",
+            "file_name": "I_am_the_best.dep",
+            "last_version": "2",
+            "package_name": "python_super_package",
+            "publisher_name": "batman",
+            "req_packages": [],
+            "type": "main",
+            "using_flag": false
+        }
+    ]
+}
