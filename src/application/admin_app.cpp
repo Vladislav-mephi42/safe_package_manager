@@ -2,9 +2,8 @@
 #include "controler/controler.h"
 #include "view/view.h"
 
-#include "network/client.h"
 #include "network/network_controler.h"
-#include "network/server.h"
+#include "network/sockets.h"
 #include "package/package.h"
 #include "package_manager/package_manager.h"
 #include <fstream>
@@ -54,7 +53,8 @@ int main() {
       json response;
       std::string file_name;
 
-      Client_socket client(49152, "127.0.0.1");
+      Client_socket client(AF_INET, SOCK_STREAM, 0);
+      client.connect("127.0.0.1", 7009);
 
       switch (option) {
       case 1:
@@ -70,7 +70,7 @@ int main() {
         std::cout << std::endl;
         package = controler.read_package_from_file(name, storage_file_name);
 
-        controler.write_package_to_json(package, package_array);
+        P_IOF::write_package_to_json(package, package_array);
         package_json["packages"] = package_array;
         request["request_type"] = "add";
         request["user_type"] = "admin";
@@ -83,7 +83,7 @@ int main() {
         response = client.recv_json();
         std::cout << "Status : " << response["status"] << std::endl;
         std::cout << "Message : " << response["final"] << std::endl;
-        client.manuly_close();
+        client.manualy_close();
         break;
       case 2:
         std::cout << "Enter package name" << std::endl;
@@ -105,7 +105,7 @@ int main() {
 
         std::cout << "Status : " << response["status"] << std::endl;
         std::cout << "Message : " << response["final"] << std::endl;
-        client.manuly_close();
+        client.manualy_close();
         break;
       case 3:
         break;

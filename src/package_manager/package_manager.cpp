@@ -31,9 +31,7 @@ void Package_manager::add(
       throw std::runtime_error("This package is already exist");
     }
   }
-
   connect_equal_pointers(new_package, cycle_destroy_flag);
-
   new_package->add();
   new_package->set_using_flag(main_flag);
   map.emplace(new_package->get_file_name(), new_package);
@@ -42,6 +40,13 @@ void Package_manager::add(
        new_package->get_connected_packages()) {
     add(req, false);
   }
+}
+void Package_manager::add_with_deep_copying(
+
+    const std::shared_ptr<Package> &new_package, bool main_flag,
+    bool cycle_destroy_flag) {
+  auto res = new_package->clone();
+  add(res, main_flag, cycle_destroy_flag);
 }
 
 void Package_manager::connect_equal_pointers(
@@ -64,22 +69,15 @@ void Package_manager::connect_equal_pointers(
     }
   }
 }
-void DFS_visit(
-    const std::shared_ptr<Package> &u,
-    std::unordered_map<std::string, Colour> &colour,
-    std::unordered_map<std::string, std::shared_ptr<Package>> &pred,
-    std::unordered_map<std::string, std::pair<unsigned, unsigned>> &time_stamp,
-    unsigned &time, bool cycle_dectroy_flag = true) {
+void DFS_visit(const std::shared_ptr<Package> &u,
+               std::unordered_map<std::string, Colour> &colour,
+               bool cycle_dectroy_flag = true) {
   const std::string &name = u->get_file_name();
   colour[name] = Colour::grey;
-  time_stamp[name].first = ++time;
-
   for (auto &v : u->get_connected_packages()) {
     const std::string &v_name = v->get_file_name();
-
     if (colour[v_name] == Colour::white) {
-      pred[v_name] = u;
-      DFS_visit(v, colour, pred, time_stamp, time);
+      DFS_visit(v, colour, cycle_dectroy_flag);
     } else if (colour[v_name] == Colour::grey) {
       if (cycle_dectroy_flag) {
         u->erase_connected(*v);
@@ -87,9 +85,21 @@ void DFS_visit(
       throw std::runtime_error("cycle found");
     }
   }
-
   colour[name] = Colour::black;
-  time_stamp[name].second = ++time;
+}
+bool Thread_visit(
+    const std::shared_ptr<Package> &u,
+    std::unordered_map<std::string, std::atomic<Colour>> &colour) {
+  colour[u->get_file_name()].store(Colour::grey, std::memory_order_relaxed);
+  for (const auto &value : u->get_connected_packages()) {
+    Colour current_colour =
+        colour[value->get_file_name()].load(std::memory_order_relaxed);
+    if (current_colour == Colour::white) {
+      Thread_visit(value, colour);
+    }
+  }
+  colour[u->get_file_name()].store(Colour::black, std::memory_order_relaxed);
+  return true;
 }
 
 void Package_manager::cycle_check(const std::shared_ptr<Package> &package,
@@ -97,17 +107,14 @@ void Package_manager::cycle_check(const std::shared_ptr<Package> &package,
   std::vector<std::shared_ptr<Package>> Adj_u =
       package->get_connected_packages();
   std::unordered_map<std::string, Colour> colour;
-  std::unordered_map<std::string, std::shared_ptr<Package>> pred;
-  std::unordered_map<std::string, std::pair<unsigned, unsigned>> time_stamp;
   for (const std::shared_ptr<Package> &el : Adj_u) {
     colour.emplace(el->get_file_name(), Colour::white);
-    pred.emplace(el->get_file_name(), nullptr);
   }
   unsigned time = 0;
   for (std::shared_ptr<Package> el : Adj_u) {
 
     if (colour[el->get_file_name()] == Colour::white) {
-      DFS_visit(el, colour, pred, time_stamp, time, cycle_destroy_flag);
+      DFS_visit(el, colour, cycle_destroy_flag);
     }
   };
 }
@@ -116,27 +123,10 @@ void Package_manager::remove(const std::shared_ptr<Package> &package) {
   remove(package->get_file_name());
 }
 
-bool Thread_visit(
-    const std::shared_ptr<Package> &u,
-    std::unordered_map<std::string, std::atomic<Colour>> &colour) {
-
-  colour[u->get_file_name()].store(Colour::grey, std::memory_order_relaxed);
-
-  for (const auto &value : u->get_connected_packages()) {
-    Colour current_colour =
-        colour[value->get_file_name()].load(std::memory_order_relaxed);
-    if (current_colour == Colour::white) {
-      Thread_visit(value, colour);
-    }
-  }
-
-  colour[u->get_file_name()].store(Colour::black, std::memory_order_relaxed);
-  return true;
-}
-
-void visit(std::unordered_map<std::string, std::atomic<Colour>> &colour,
-           const std::shared_ptr<Package> &package,
-           Map<std::string, std::shared_ptr<Package>> &map) {
+void map_erase_visit(
+    std::unordered_map<std::string, std::atomic<Colour>> &colour,
+    const std::shared_ptr<Package> &package,
+    Map<std::string, std::shared_ptr<Package>> &map) {
   if (colour[package->get_file_name()].load(std::memory_order_relaxed) !=
       Colour::white) {
     return;
@@ -146,10 +136,9 @@ void visit(std::unordered_map<std::string, std::atomic<Colour>> &colour,
     if (colour[elem->get_file_name()].load(std::memory_order_relaxed) ==
             Colour::white &&
         !(elem->get_using_flag())) {
-      visit(colour, elem, map);
+      map_erase_visit(colour, elem, map);
     }
   }
-
   map.erase(package->get_file_name());
 }
 
@@ -187,7 +176,7 @@ void Package_manager::remove(const std::string &package_name) {
   }
 
   if (colour[package_name].load(std::memory_order_relaxed) == Colour::white) {
-    visit(colour, it->second, map);
+    map_erase_visit(colour, it->second, map);
   } else {
     throw std::runtime_error("this package is using by other");
   }
@@ -254,7 +243,7 @@ void Package_manager::remove_unuse_one_thread() {
       colour[value.first] = Colour::black;
       for (std::shared_ptr<Package> el : Adj_u) {
         if (colour[el->get_file_name()] == Colour::white) {
-          DFS_visit(el, colour, pred, time_stamp, time);
+          DFS_visit(el, colour);
         }
       }
     }
@@ -312,10 +301,4 @@ bool Package_manager::cycle_destroy(const std::shared_ptr<Package> &package) {
     }
   }
   return true;
-}
-
-void Package_manager::global_update() {
-  for (auto &elem : map) {
-    (elem.second)->set_current_version((elem.second)->get_last_version());
-  }
 }

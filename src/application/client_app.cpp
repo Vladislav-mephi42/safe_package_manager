@@ -2,9 +2,9 @@
 #include "controler/controler.h"
 #include "view/view.h"
 
-#include "network/client.h"
 #include "network/network_controler.h"
-#include "network/server.h"
+
+#include "network/sockets.h"
 #include "package/package.h"
 #include "package_manager/package_manager.h"
 #include <fstream>
@@ -66,7 +66,7 @@ int main() {
 
   std::string file_name;
   std::ifstream package_file;
-  Client_network_controler network_controler(49152, "127.0.0.1",
+  Client_network_controler network_controler(7009, "127.0.0.1",
                                              json_repositories_names);
   int option = 0;
   do {

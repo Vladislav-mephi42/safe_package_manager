@@ -74,7 +74,7 @@ bool Empty_read::can_read(const std::string &name) const {
   if (name.length() < 5) {
     return false;
   }
-  if (name.substr(name.length() - 5, name.length()) != "-last") {
+  if (name.substr(name.length() - 5) != "-last") {
     return false;
   }
   return true;

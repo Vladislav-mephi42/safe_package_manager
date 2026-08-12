@@ -1,7 +1,7 @@
 #include "handle_strategy.h"
-#include "client.h"
+
 #include "controler/controler.h"
-#include "server.h"
+
 #include <algorithm>
 #include <arpa/inet.h>
 #include <csignal>
@@ -16,12 +16,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#ifndef htonll
-#define htonll(x) ((uint64_t)htonl((x) & 0xFFFFFFFF) << 32 | htonl((x) >> 32))
-#endif
-#ifndef ntohll
-#define ntohll(x) ((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32 | ntohl((x) >> 32))
-#endif
 static std::hash<std::string> hasher;
 static size_t hash = hasher("secret_password");
 

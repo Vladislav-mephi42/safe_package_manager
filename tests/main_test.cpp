@@ -1,9 +1,9 @@
 #define CATCH_CONFIG_MAIN
 #include "controler/controler.h"
-#include "network/client.h"
+
 #include "network/handle_strategy.h"
 #include "network/network_controler.h"
-#include "network/server.h"
+#include "network/sockets.h"
 #include "package/empty_package.h"
 #include "package/main_package.h"
 #include "package/package.h"
@@ -313,7 +313,7 @@ void build_manager_ms(Package_manager &pm, int root_count, int depth,
   }
 
   for (auto &root : roots) {
-    pm.add(root);
+    pm.add_with_deep_copying(root);
   }
 }
 
@@ -350,7 +350,7 @@ void build_manager_mm(Package_manager &pm, int root_count, int depth,
   }
 
   for (auto &root : roots) {
-    pm.add(root);
+    pm.add_with_deep_copying(root);
   }
 }
 
@@ -389,7 +389,7 @@ void build_manager_me(Package_manager &pm, int root_count, int depth,
   }
 
   for (auto &root : roots) {
-    pm.add(root);
+    pm.add_with_deep_copying(root);
   }
 }
 
@@ -434,14 +434,17 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Support_package>(pkg_2)));
     REQUIRE(pm.size() == 2);
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 3);
     pm = Package_manager();
     Package_manager pm_2;
     REQUIRE(pkg_2.get_connected_packages().size() == 1);
-    REQUIRE_NOTHROW(pm_2.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm_2.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm_2.size() == 3);
   }
   SECTION("Add (two same packages with different other atributes)") {
@@ -456,10 +459,11 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
-    pm.add(std::make_shared<Main_package>(pkg_1));
+    pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1));
     REQUIRE(pm.size() == 3);
     pkg_2.set_publisher_name("joker");
-    REQUIRE_THROWS(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE_THROWS(
+        pm.add_with_deep_copying(std::make_shared<Support_package>(pkg_2)));
   }
 
   SECTION("Add (cycle found)") {
@@ -475,7 +479,8 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
-    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
   }
 
   SECTION("Add (the same package)") {
@@ -483,8 +488,10 @@ TEST_CASE("Package manager (Basic methods)") {
     Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
                        empty);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
-    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
   }
 
   SECTION("Remove (basic)") {
@@ -492,7 +499,8 @@ TEST_CASE("Package manager (Basic methods)") {
     Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
                        empty);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 1);
     REQUIRE_NOTHROW(pm.remove(pkg_1.get_file_name()));
     REQUIRE(pm.size() == 0);
@@ -503,7 +511,8 @@ TEST_CASE("Package manager (Basic methods)") {
     Main_package pkg_1("", package_names[0], "batman", "123456", "12344",
                        empty);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 1);
     REQUIRE_NOTHROW(pm.remove(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm.size() == 0);
@@ -522,7 +531,8 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
 
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_NOTHROW(pm.remove(pkg_1.get_file_name()));
     REQUIRE(pm.size() == 0);
   }
@@ -540,7 +550,8 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
 
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE_THROWS(pm.remove(pkg_2.get_file_name()));
     REQUIRE(pm.size() == 3);
     REQUIRE_THROWS(pm.remove(pkg_3.get_file_name()));
@@ -584,7 +595,8 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_2.insert_connected(std::make_shared<Empty_package>(pkg_3));
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Support_package>(pkg_2)));
     std::stringstream pkg_stream;
     std::string pkg_str;
     REQUIRE(pm.find(pkg_1.get_file_name()) == false);
@@ -596,12 +608,14 @@ TEST_CASE("Package manager (Basic methods)") {
     REQUIRE(pm.find(pkg_3.get_file_name(), pkg_stream) == true);
     pkg_str = pkg_stream.str();
     REQUIRE(pkg_str.find(pkg_3.get_file_name()) != std::string::npos);
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
 
     pm = Package_manager();
     Package_manager pm_2;
     REQUIRE(pkg_2.get_connected_packages().size() == 1);
-    REQUIRE_NOTHROW(pm_2.add(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_NOTHROW(
+        pm_2.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
     REQUIRE(pm_2.size() == 3);
   }
 
@@ -619,7 +633,7 @@ TEST_CASE("Package manager (Basic methods)") {
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     auto ptr_pkg_1 = std::make_shared<Main_package>(pkg_1);
     Package_manager pm;
-    REQUIRE_THROWS(pm.add(ptr_pkg_1, false));
+    REQUIRE_THROWS(pm.add_with_deep_copying(ptr_pkg_1, false));
     REQUIRE_NOTHROW(pm.cycle_destroy(ptr_pkg_1));
   }
 
@@ -633,7 +647,7 @@ TEST_CASE("Package manager (Basic methods)") {
     std::vector<std::shared_ptr<Package>> empty;
     for (int i = 0; i < 20; i++) {
       pkg = Support_package(package_names[i], "batman", "3.12", "3.12", empty);
-      pm.add(std::make_shared<Support_package>(pkg));
+      pm.add_with_deep_copying(std::make_shared<Support_package>(pkg));
     }
     REQUIRE(pm.size() == (compute_total_packages(3, 3, 2)) + 20);
     REQUIRE_NOTHROW(pm.remove_unuse());
@@ -659,8 +673,8 @@ TEST_CASE("Package  manager (advanced checks)") {
     pkg_1->insert_connected(pkg_4);
     pkg_2->insert_connected(pkg_3);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(pkg_1));
-    REQUIRE_NOTHROW(pm.add(pkg_2));
+    REQUIRE_NOTHROW(pm.add_with_deep_copying(pkg_1));
+    REQUIRE_NOTHROW(pm.add_with_deep_copying(pkg_2));
     REQUIRE(pm.size() == 4);
     REQUIRE_NOTHROW(pm.remove(pkg_1));
     REQUIRE(pm.size() == 2);
@@ -674,8 +688,10 @@ TEST_CASE("Package  manager (advanced checks)") {
                        empty);
     Support_package pkg_2(package_names[0], "batman", "123456", "12344", empty);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
-    REQUIRE_THROWS(pm.add(std::make_shared<Support_package>(pkg_2)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(
+        pm.add_with_deep_copying(std::make_shared<Support_package>(pkg_2)));
     REQUIRE(pm.size() == 1);
   }
   SECTION("Same packages with different configuration error(2)") {
@@ -684,8 +700,10 @@ TEST_CASE("Package  manager (advanced checks)") {
                        empty);
     Main_package pkg_2("", package_names[0], "joker", "123456", "12344", empty);
     Package_manager pm;
-    REQUIRE_NOTHROW(pm.add(std::make_shared<Main_package>(pkg_1)));
-    REQUIRE_THROWS(pm.add(std::make_shared<Main_package>(pkg_2)));
+    REQUIRE_NOTHROW(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_1)));
+    REQUIRE_THROWS(
+        pm.add_with_deep_copying(std::make_shared<Main_package>(pkg_2)));
     REQUIRE(pm.size() == 1);
   }
 }
@@ -801,9 +819,10 @@ TEST_CASE("Controler") {
     Package_manager pm_2;
     build_manager_mm(pm_1, 3, 3, 2);
 
-    Controler controler;
-    controler.write_package_manager_to_file("test_file_1.json", pm_1);
-    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    Controler controler_1("test_file_234.json", &pm_1);
+    Controler controler_2("test_file_234.json", &pm_2);
+    controler_1.write_package_manager_to_file("test_file_1.json");
+    controler_2.read_package_manager_from_file("test_file_1.json");
     REQUIRE(pm_1.size() == pm_2.size());
     int total_packages = compute_total_packages(3, 3, 2);
     auto package_names = generate_names(total_packages);
@@ -817,9 +836,10 @@ TEST_CASE("Controler") {
     Package_manager pm_2;
     build_manager_ms(pm_1, 3, 3, 2);
 
-    Controler controler;
-    controler.write_package_manager_to_file("test_file_1.json", pm_1);
-    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    Controler controler_1("test_file_234.json", &pm_1);
+    Controler controler_2("test_file_234.json", &pm_2);
+    controler_1.write_package_manager_to_file("test_file_1.json");
+    controler_2.read_package_manager_from_file("test_file_1.json");
     REQUIRE(pm_1.size() == pm_2.size());
     int total_packages = compute_total_packages(3, 3, 2);
     auto package_names = generate_names(total_packages);
@@ -828,14 +848,15 @@ TEST_CASE("Controler") {
       REQUIRE(pm_2.find(elem));
     }
   }
-  SECTION("Write/read package manager to file MS") {
+  SECTION("Write/read package manager to file ME") {
     Package_manager pm_1;
     Package_manager pm_2;
     build_manager_me(pm_1, 3, 3, 2);
 
-    Controler controler;
-    controler.write_package_manager_to_file("test_file_1.json", pm_1);
-    controler.read_package_manager_from_file("test_file_1.json", pm_2);
+    Controler controler_1("test_file_234.json", &pm_1);
+    Controler controler_2("test_file_234.json", &pm_2);
+    controler_1.write_package_manager_to_file("test_file_1.json");
+    controler_2.read_package_manager_from_file("test_file_1.json");
     REQUIRE(pm_1.size() == pm_2.size());
     int total_packages = compute_total_packages(3, 3, 2);
     auto package_names = generate_names(total_packages);
@@ -844,26 +865,7 @@ TEST_CASE("Controler") {
       REQUIRE(pm_2.find(elem));
     }
   }
-  SECTION("Write/read package to file") {
-    json data;
-    data["packages"] = json::array();
-    std::ofstream file("test_file_2.json");
-    file << data;
-    file.close();
 
-    Main_package pkg_1(package_names[0], "batman", "123456", "12344", {});
-    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
-    Main_package tmp(package_names[3], "batman", "123456", "12344", {});
-    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
-    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
-    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
-    Controler controler;
-    controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
-                                    "test_file_2.json");
-    auto result =
-        controler.read_package_from_file(package_names[0], "test_file_2.json");
-    REQUIRE(*result.get() == pkg_1);
-  }
   SECTION("write package to file(cycle error)") {
     json data;
     data["packages"] = json::array();
@@ -885,26 +887,7 @@ TEST_CASE("Controler") {
     pkg_1->insert_connected(pkg_2);
     pkg_1->insert_connected(pkg_3);
     Controler controler;
-    REQUIRE_THROWS(controler.write_package_to_file(pkg_1, "test_file_2.json"));
-  }
-
-  SECTION("write package from file(super bad format)") {
-    json data;
-    data["packages"] = json::array();
-    std::ofstream file("test_file_2.json");
-    file << data;
-    file.close();
-
-    Main_package pkg_1("", package_names[0], "batman", "123456", "12344", {});
-    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
-    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
-    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
-    pkg_2.insert_connected(std::make_shared<Main_package>(pkg_1));
-    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
-    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
-    Controler controler;
-    REQUIRE_THROWS(controler.write_package_to_file(
-        std::make_shared<Main_package>(pkg_1), "test_file_2.json"));
+    REQUIRE_THROWS(P_IOF::write_package_to_file(pkg_1, "test_file_2.json"));
   }
 }
 
@@ -934,8 +917,8 @@ TEST_CASE("Controler main purpose test") {
     pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
     pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
 
-    controler.write_package_to_file(std::make_shared<Main_package>(pkg_1),
-                                    "repozitory_2.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(pkg_1),
+                                 "repozitory_2.json");
     REQUIRE_NOTHROW(controler.add_package(pkg_2.get_file_name()));
     REQUIRE(pm.size() == compute_total_packages(3, 3, 3) + 1);
     REQUIRE_NOTHROW(controler.add_package(pkg_3.get_file_name()));
@@ -953,10 +936,10 @@ TEST_CASE("Controler main purpose test") {
 TEST_CASE("Controler empty packages") {
   SECTION("Basic 1") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 3, 3, 3);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package", package_names[0],
                                 "batman", "1", "1", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
@@ -964,10 +947,10 @@ TEST_CASE("Controler empty packages") {
     Empty_package empty_package("python_super_package-last",
                                 std::make_shared<Main_package>(linked_package));
 
-    controler.write_package_to_file(
-        std::make_shared<Empty_package>(empty_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Empty_package>(empty_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -981,10 +964,10 @@ TEST_CASE("Controler empty packages") {
   }
   SECTION("Basic 2") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 2, 2, 2);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package", package_names[0],
                                 "batman", "3", "3", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
@@ -992,10 +975,10 @@ TEST_CASE("Controler empty packages") {
     Empty_package empty_package("python_super_package-last",
                                 std::make_shared<Main_package>(linked_package));
 
-    controler.write_package_to_file(
-        std::make_shared<Empty_package>(empty_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Empty_package>(empty_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -1009,19 +992,19 @@ TEST_CASE("Controler empty packages") {
   }
   SECTION("basic error(format error)") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 2, 2, 2);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package-last", package_names[0],
                                 "batman", "3", "3", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
                                 "batman", "2", "2", {});
 
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(linked_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(linked_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -1029,19 +1012,19 @@ TEST_CASE("Controler empty packages") {
   }
   SECTION("basic error(not founded error)") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 2, 2, 2);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package", package_names[0],
                                 "batman", "3", "3", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
                                 "batman", "2", "2", {});
 
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(linked_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(linked_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -1049,19 +1032,19 @@ TEST_CASE("Controler empty packages") {
   }
   SECTION("basic error(not founded error 1)") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 2, 2, 2);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package", package_names[0],
                                 "batman", "3", "3", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
                                 "batman", "2", "2", {});
 
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(linked_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(linked_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -1069,19 +1052,19 @@ TEST_CASE("Controler empty packages") {
   }
   SECTION("basic error(not founded error 2)") {
     Package_manager pm;
-    Controler controler;
 
     build_manager_mm(pm, 2, 2, 2);
-    controler.write_package_manager_to_file("last.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("last.json");
     Main_package linked_package("python_super_package", package_names[0],
                                 "batman", "3", "3", {});
     Main_package better_package("python_super_package", "I_am_the_best.dep",
                                 "batman", "2", "2", {});
 
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(linked_package), "last.json");
-    controler.write_package_to_file(
-        std::make_shared<Main_package>(better_package), "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(linked_package),
+                                 "last.json");
+    P_IOF::write_package_to_file(std::make_shared<Main_package>(better_package),
+                                 "last.json");
     std::ifstream file("last.json");
     json data;
     file >> data;
@@ -1091,9 +1074,12 @@ TEST_CASE("Controler empty packages") {
 
 TEST_CASE("Network") {
   SECTION("Basic logic") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     json request;
@@ -1108,9 +1094,11 @@ TEST_CASE("Network") {
     REQUIRE(request == response);
   }
   SECTION("Handle user update request(basic)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "user";
@@ -1119,10 +1107,11 @@ TEST_CASE("Network") {
     send_message["file_names"].push_back("s_2.json");
     send_message["request_type"] = "update";
     Package_manager pm;
-    Controler controler;
+
     build_manager_mm(pm, 2, 1, 1);
-    controler.write_package_manager_to_file("s_1.json", pm);
-    controler.write_package_manager_to_file("s_2.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("s_1.json");
+    controler.write_package_manager_to_file("s_2.json");
     User_update_request handler;
     json request;
     json report;
@@ -1143,9 +1132,11 @@ TEST_CASE("Network") {
     REQUIRE(report["final"] == "operation end succesfuly");
   }
   SECTION("Handle user update request(error handling)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "user";
@@ -1154,10 +1145,11 @@ TEST_CASE("Network") {
     send_message["file_names"].push_back("s_2.json");
     send_message["request_type"] = "update";
     Package_manager pm;
-    Controler controler;
+
     build_manager_mm(pm, 2, 1, 1);
-    controler.write_package_manager_to_file("s_1.json", pm);
-    controler.write_package_manager_to_file("s_2.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("s_1.json");
+    controler.write_package_manager_to_file("s_2.json");
     User_update_request handler;
     json request;
     json report;
@@ -1172,9 +1164,11 @@ TEST_CASE("Network") {
     REQUIRE(report["final"] == "bad json format: file_name is invalid");
   }
   SECTION("Handle admin add request(basic)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1189,8 +1183,8 @@ TEST_CASE("Network") {
     json packages_array = json::array();
     json package;
 
-    controler.write_package_to_json(
-        std::make_shared<Main_package>(test_package), packages_array);
+    P_IOF::write_package_to_json(std::make_shared<Main_package>(test_package),
+                                 packages_array);
     package["packages"] = packages_array;
     send_message["package"] = package;
     send_message["package_name"] = "joker.dep";
@@ -1210,9 +1204,11 @@ TEST_CASE("Network") {
     REQUIRE(controler.find_package("joker.dep"));
   }
   SECTION("Handle admin add request(bad json format error)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1227,8 +1223,8 @@ TEST_CASE("Network") {
     json packages_array = json::array();
     json package;
 
-    controler.write_package_to_json(
-        std::make_shared<Main_package>(test_package), packages_array);
+    P_IOF::write_package_to_json(std::make_shared<Main_package>(test_package),
+                                 packages_array);
     package["packages"] = packages_array;
     send_message["package"] = package;
 
@@ -1248,9 +1244,11 @@ TEST_CASE("Network") {
     REQUIRE(!controler.find_package("joker.dep"));
   }
   SECTION("Handle admin add request(password error)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1265,8 +1263,8 @@ TEST_CASE("Network") {
     json packages_array = json::array();
     json package;
 
-    controler.write_package_to_json(
-        std::make_shared<Main_package>(test_package), packages_array);
+    P_IOF::write_package_to_json(std::make_shared<Main_package>(test_package),
+                                 packages_array);
     package["packages"] = packages_array;
     send_message["package"] = package;
     send_message["package_name"] = "joker.dep";
@@ -1287,9 +1285,11 @@ TEST_CASE("Network") {
   }
 
   SECTION("Handle admin remove request(basic)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1319,9 +1319,11 @@ TEST_CASE("Network") {
   }
 
   SECTION("Handle admin remove request(bad json format error)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1350,9 +1352,11 @@ TEST_CASE("Network") {
   }
 
   SECTION("Handle admin remove request(password error)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1381,9 +1385,11 @@ TEST_CASE("Network") {
     REQUIRE(controler.find_package("pkg_0.dep"));
   }
   SECTION("Handle strategy (admin)(add)(basic)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "admin";
@@ -1398,8 +1404,8 @@ TEST_CASE("Network") {
     json packages_array = json::array();
     json package;
 
-    controler.write_package_to_json(
-        std::make_shared<Main_package>(test_package), packages_array);
+    P_IOF::write_package_to_json(std::make_shared<Main_package>(test_package),
+                                 packages_array);
     package["packages"] = packages_array;
     send_message["package"] = package;
     send_message["package_name"] = "joker.dep";
@@ -1419,9 +1425,11 @@ TEST_CASE("Network") {
     REQUIRE(controler.find_package("joker.dep"));
   }
   SECTION("Handle strategy (user)(update)(basic)") {
-    Server_socket server(49152, INADDR_ANY);
-    listen(server.get_server_socket(), 1);
-    Client_socket client(49152, "127.0.0.1");
+    Server_socket server(AF_INET, SOCK_STREAM, 0);
+    server.bind(49152);
+    server.listen(1);
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect("127.0.0.1", 49152);
     Client_socket server_client = server.accept();
     json send_message;
     send_message["user_type"] = "user";
@@ -1430,10 +1438,11 @@ TEST_CASE("Network") {
     send_message["file_names"].push_back("s_2.json");
     send_message["request_type"] = "update";
     Package_manager pm;
-    Controler controler;
+
     build_manager_mm(pm, 2, 1, 1);
-    controler.write_package_manager_to_file("s_1.json", pm);
-    controler.write_package_manager_to_file("s_2.json", pm);
+    Controler controler("default.json", &pm);
+    controler.write_package_manager_to_file("s_1.json");
+    controler.write_package_manager_to_file("s_2.json");
     Handle_user_strategy handler;
     json request;
     json report;
@@ -1457,11 +1466,9 @@ TEST_CASE("Network") {
 
 TEST_CASE("Network controler") {
   SECTION("user update(basic)") {
-    Server_socket server_socket(49152);
-    if (listen(server_socket.get_server_socket(), 1) < 0) {
-      throw std::runtime_error("listen failed: " +
-                               std::string(strerror(errno)));
-    }
+    Server_socket server_socket(AF_INET, SOCK_STREAM, 0);
+    server_socket.bind(49152);
+    server_socket.listen(1);
     Package_manager pm_for_server;
     build_manager_mm(pm_for_server, 2, 3, 2);
     Controler controler_for_server("storage.json", &pm_for_server);
@@ -1485,11 +1492,9 @@ TEST_CASE("Network controler") {
     REQUIRE(request["status"] == "ok");
   }
   SECTION("user update(error)") {
-    Server_socket server_socket(49152);
-    if (listen(server_socket.get_server_socket(), 1) < 0) {
-      throw std::runtime_error("listen failed: " +
-                               std::string(strerror(errno)));
-    }
+    Server_socket server_socket(AF_INET, SOCK_STREAM, 0);
+    server_socket.bind(49152);
+    server_socket.listen(1);
     Package_manager pm_for_server;
     build_manager_mm(pm_for_server, 2, 3, 2);
     Controler controler_for_server("storage.json", &pm_for_server);
@@ -1514,5 +1519,49 @@ TEST_CASE("Network controler") {
     REQUIRE_NOTHROW(request = server.handle(request, server_client));
     th.join();
     REQUIRE(request["status"] == "fail");
+  }
+}
+
+TEST_CASE("P_IOF") {
+  SECTION("write package to file(cycle error)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1_tmp("", package_names[0], "batman", "123456", "12344",
+                           {});
+    Support_package pkg_2_tmp(package_names[1], "batman", "123456", "12344",
+                              {});
+    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3_tmp(package_names[3],
+                            std::make_shared<Main_package>(tmp));
+    auto pkg_1 = std::make_shared<Main_package>(pkg_1_tmp);
+    auto pkg_2 = std::make_shared<Support_package>(pkg_2_tmp);
+    auto pkg_3 = std::make_shared<Empty_package>(pkg_3_tmp);
+    pkg_2->insert_connected(pkg_1);
+    pkg_1->insert_connected(pkg_2);
+    pkg_1->insert_connected(pkg_3);
+    Controler controler;
+    REQUIRE_THROWS(P_IOF::write_package_to_file(pkg_1, "test_file_2.json"));
+  }
+  SECTION("write package to file(super bad format)") {
+    json data;
+    data["packages"] = json::array();
+    std::ofstream file("test_file_2.json");
+    file << data;
+    file.close();
+
+    Main_package pkg_1("", package_names[0], "batman", "123456", "12344", {});
+    Support_package pkg_2(package_names[1], "batman", "123456", "12344", {});
+    Main_package tmp("", package_names[3], "batman", "123456", "12344", {});
+    Empty_package pkg_3(package_names[3], std::make_shared<Main_package>(tmp));
+    pkg_2.insert_connected(std::make_shared<Main_package>(pkg_1));
+    pkg_1.insert_connected(std::make_shared<Support_package>(pkg_2));
+    pkg_1.insert_connected(std::make_shared<Empty_package>(pkg_3));
+    Controler controler;
+    REQUIRE_THROWS(P_IOF::write_package_to_file(
+        std::make_shared<Main_package>(pkg_1), "test_file_2.json"));
   }
 }

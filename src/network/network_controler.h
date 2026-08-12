@@ -1,6 +1,5 @@
 #ifndef NETWORK_CONTROLER_H
 #define NETWORK_CONTROLER_H
-#include "client.h"
 
 #include "controler/controler.h"
 #include "handle_strategy.h"
@@ -19,12 +18,18 @@
 #include <unistd.h>
 #include <vector>
 
+/**
+ * @brief Server-side network controller that dispatches requests to
+ * registered Handle_strategy implementations.
+ */
 class Server_network_controler {
 private:
   std::vector<std::shared_ptr<Handle_strategy>> strategies;
   Controler *controler;
 
 public:
+  /** @brief Registers available strategies. @throws std::runtime_error if
+   * controler is nullptr. */
   Server_network_controler(Controler *controler) : controler(controler) {
     if (controler == nullptr) {
       throw std::runtime_error("bad pounter");
@@ -34,9 +39,9 @@ public:
     strategies.push_back(std::make_shared<Handle_admin_strategy>(admin));
     strategies.push_back(std::make_shared<Handle_user_strategy>(user));
   }
-  Server_network_controler(const Server_network_controler &other) = default;
-  ~Server_network_controler() = default;
 
+  /** @brief Checks if any strategy can handle the request. @throws
+   * std::runtime_error if JSON format is invalid. */
   bool can_handle(json &request) {
     if (!(request.contains("user_type") && request.contains("request_type"))) {
       throw std::runtime_error("bad json format");
@@ -49,6 +54,8 @@ public:
     return false;
   }
 
+  /** @brief Handles the request using the first matching strategy. @throws
+   * std::runtime_error if no strategy matches. */
   json handle(json &request, Client_socket &socket) {
     for (const auto &elem : strategies) {
       if (elem->can_handle(request["user_type"])) {
@@ -59,6 +66,10 @@ public:
   }
 };
 
+/**
+ * @brief Client-side network controller for sending update requests
+ * and receiving files from the server.
+ */
 class Client_network_controler {
 private:
   std::vector<std::string> file_names;
@@ -66,13 +77,18 @@ private:
   std::string server_ip;
 
 public:
+  /** @brief Constructs with server address, port, and files to request. */
   Client_network_controler(size_t port, const std::string &server_ip,
                            const std::vector<std::string> &file_names)
       : file_names(file_names), port(port), server_ip(server_ip) {}
-  Client_network_controler(const Client_network_controler &other) = default;
-  ~Client_network_controler() = default;
+
+  /**
+   * @brief Sends an update request and saves received files to disk.
+   * @throws std::runtime_error on server error or file write failure.
+   */
   void update() {
-    Client_socket client(port, server_ip.c_str());
+    Client_socket client(AF_INET, SOCK_STREAM, 0);
+    client.connect(server_ip.c_str(), port);
     json send_message;
     send_message["user_type"] = "user";
     send_message["file_names"] = json::array();
@@ -87,12 +103,10 @@ public:
     for (int i = 0; i < file_names.size(); i++) {
       response = client.recv_json();
       if (response["status"] == "fail") {
-
         throw std::runtime_error("server_error");
       } else {
         std::ofstream file(response["file_name"]);
         if (!file.is_open()) {
-
           throw std::runtime_error("file open error");
         }
         response.erase("file_name");
@@ -103,5 +117,4 @@ public:
     }
   }
 };
-
 #endif
